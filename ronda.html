@@ -154,9 +154,12 @@
   }
 
   function ubicacion() {
+    // Si el teléfono no responde o el permiso queda sin contestar, la ronda sigue sin ubicación.
     return new Promise((ok) => {
       if (!navigator.geolocation) return ok(null);
-      navigator.geolocation.getCurrentPosition((p) => ok(p.coords), () => ok(null), { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+      const corte = setTimeout(() => ok(null), 10000);
+      const fin = (v) => { clearTimeout(corte); ok(v); };
+      navigator.geolocation.getCurrentPosition((p) => fin(p.coords), () => fin(null), { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
     });
   }
 
