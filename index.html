@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafetyHome | Cuidado de casas y mascotas mientras viajas</title>
+<meta name="description" content="Rondines retirados de las Fuerzas Armadas y de Orden cuidan tu casa y tus mascotas en Santiago mientras viajas. Recibes un parte por WhatsApp después de cada ronda.">
+<meta property="og:title" content="SafetyHome | Sin novedad en casa">
+<meta property="og:description" content="Cuidado de casas y mascotas en Santiago, con rondines retirados de las Fuerzas Armadas y de Orden.">
+<meta name="theme-color" content="#13233a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z' fill='%2346582f'/%3E%3Cpath d='M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/sh.css">
+<style>
+  .heroe { padding: 56px 0 64px; }
+  .heroe .cont { display: grid; gap: 44px; align-items: center; grid-template-columns: 1fr; }
+  .heroe h1 { margin-bottom: .28em; }
+  .heroe .bajada { font-size: 1.3rem; line-height: 1.45; max-width: 31em; margin-bottom: 1.4em; }
+  .acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+  .heroe .parte { max-width: 460px; justify-self: center; width: 100%; box-shadow: 14px 14px 0 var(--olivo-claro); }
+  .heroe .parte .sello { position: absolute; right: 16px; top: 66px; background: #fff; }
+  .llega { margin: 14px 0 0; font-size: .95rem; color: var(--pizarra); text-align: center; }
+  .mini-fotos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .mini-fotos svg { width: 100%; height: auto; border-radius: 4px; display: block; }
+  @media (min-width: 940px) { .heroe { padding: 76px 0 88px; } .heroe .cont { grid-template-columns: 1.08fr .92fr; } .heroe .parte { justify-self: end; } }
+
+  .tramo { padding: 64px 0; }
+  .tramo.blanco { background: #fff; border-block: 1px solid var(--linea); }
+  .tramo.oscuro { background: var(--tinta); color: #fff; }
+  .tramo.oscuro .mut { color: #c3cedb; }
+  .tramo > .cont > h2 { max-width: 16em; }
+  .intro { font-size: 1.15rem; max-width: 38em; margin-bottom: 2em; }
+  .dos { display: grid; gap: 36px 56px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 860px) { .dos { grid-template-columns: 1fr 1fr; } }
+
+  .verif { list-style: none; margin: 0; padding: 0; }
+  .verif li { padding: 16px 0 16px 20px; border-left: 4px solid var(--bronce); margin-bottom: 14px; }
+  .verif strong { display: block; font-family: var(--titulo); font-size: 1.45rem; line-height: 1.1; margin-bottom: 4px; }
+  .tramo.oscuro .verif li { border-color: #d7a955; }
+
+  .ronda-lista { columns: 2 260px; column-gap: 40px; list-style: none; margin: 0; padding: 0; }
+  .ronda-lista li { break-inside: avoid; padding: 10px 0 10px 34px; position: relative; border-bottom: 1px solid var(--linea); }
+  .ronda-lista li::before { content: ""; position: absolute; left: 0; top: 13px; width: 20px; height: 20px; border-radius: 3px; background: var(--olivo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.500l3.200 3.200L15 6.800' fill='none' stroke='white' stroke-width='2.400' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px; }
+  .hoja-cliente { background: var(--bronce-claro); border: 1px dashed var(--bronce); border-radius: var(--radio); padding: 20px 22px; margin-top: 28px; max-width: 46em; }
+  .hoja-cliente p { margin: 0; }
+
+  .pasos { list-style: none; counter-reset: paso; margin: 0; padding: 0; display: grid; gap: 28px 36px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .pasos li { counter-increment: paso; }
+  .pasos li::before { content: counter(paso); font-family: var(--titulo); font-weight: 700; font-size: 3.4rem; line-height: 1; color: #d7a955; display: block; margin-bottom: 6px; }
+  .pasos strong { font-family: var(--titulo); font-size: 1.5rem; display: block; line-height: 1.1; margin-bottom: 6px; }
+  .pasos p { margin: 0; color: #d3dbe6; }
+
+  .precio-dia { font-family: var(--titulo); font-weight: 700; font-size: 1.9rem; display: block; margin-top: 6px; }
+  .precio-dia small { font: 500 .95rem var(--texto); color: var(--pizarra); }
+  #resultado { margin-top: 8px; }
+  .niveles { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin: 0 0 24px; }
+  .nivel { background: #fff; border: 1px solid var(--linea); border-top: 5px solid var(--bronce); border-radius: var(--radio); padding: 18px 20px; }
+  .nivel b { font-family: var(--titulo); font-size: 2.2rem; display: block; line-height: 1.1; margin: 4px 0; }
+  .ventajas { margin: 0; padding-left: 1.2em; max-width: 46em; }
+  .ventajas li { margin-bottom: 6px; }
+
+  details { border-bottom: 1px solid var(--linea); padding: 14px 0; max-width: 46em; }
+  summary { font-weight: 600; cursor: pointer; font-size: 1.08rem; }
+  details p { margin: 10px 0 0; color: var(--pizarra); }
+  .trampa { position: absolute; left: -9999px; }
+</style>
+</head>
+<body>
+
+<header class="cab">
+  <div class="cont">
+    <a class="marca" href="./">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z" fill="#7d9a55"/><path d="M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z" fill="#fff"/></svg>
+      SafetyHome
+    </a>
+    <nav aria-label="Secciones">
+      <a class="sec" href="#como">Cómo funciona</a>
+      <a class="sec" href="#planes">Planes</a>
+      <a class="sec" href="#mensual">Plan mensual</a>
+      <a class="btn claro mini" href="#postular">Postular mi casa</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="heroe">
+  <div class="cont">
+    <div>
+      <h1>Sin novedad<br>en casa.</h1>
+      <p class="bajada">Rondines retirados de las Fuerzas Armadas y de Orden cuidan tu casa y tus mascotas mientras viajas. Al terminar cada ronda recibes el parte por WhatsApp, con fotos.</p>
+      <div class="acciones">
+        <a class="btn" href="#postular">Postular mi casa</a>
+        <a class="btn sec" href="#planes">Ver planes y precios</a>
+      </div>
+    </div>
+    <div>
+      <article class="parte" aria-label="Ejemplo del parte de ronda que recibe el cliente">
+        <div class="parte-cab"><strong>Parte de ronda</strong><span class="num">lunes 12 de octubre</span></div>
+        <div class="parte-cuerpo">
+          <dl class="parte-datos">
+            <dt>Llegada</dt><dd class="num">18:42</dd>
+            <dt>Salida</dt><dd class="num">19:26</dd>
+            <dt>Rondín</dt><dd>Juan C., suboficial en retiro</dd>
+          </dl>
+          <span class="sello">Sin novedad</span>
+          <ul class="tareas">
+            <li>Ronda de seguridad: puertas, ventanas y rejas</li>
+            <li>Riego de plantas y jardín</li>
+            <li>Luna y Tomás con comida y agua fresca</li>
+            <li>Paseo de 30 minutos con Luna</li>
+            <li>Correspondencia retirada</li>
+          </ul>
+          <div class="mini-fotos" aria-hidden="true">
+            <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#c4ddeb"/><rect y="64" width="120" height="26" fill="#78966a"/><path d="M30 34L60 14l30 20z" fill="#964a3a"/><rect x="36" y="34" width="48" height="32" fill="#ece6d6"/><rect x="55" y="48" width="10" height="18" fill="#5c3e2c"/><rect x="41" y="40" width="10" height="10" fill="#a0c8dc"/><rect x="69" y="40" width="10" height="10" fill="#a0c8dc"/></svg>
+            <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#eee8d6"/><rect y="64" width="120" height="26" fill="#c8ba96"/><rect x="38" y="42" width="44" height="26" rx="12" fill="#c4964e"/><rect x="72" y="26" width="22" height="22" rx="8" fill="#c4964e"/><path d="M74 28l3-9 5 8zM88 27l5-8 1 10z" fill="#966e3c"/><circle cx="86" cy="36" r="1.800" fill="#1e1e1e"/><rect x="14" y="62" width="18" height="6" rx="2" fill="#466eaa"/></svg>
+            <svg viewBox="0 0 120 90"><rect width="120" height="90" fill="#c4ddeb"/><rect y="42" width="120" height="48" fill="#6ea05a"/><rect x="28" y="52" width="64" height="24" rx="10" fill="#46aacd"/><circle cx="18" cy="36" r="11" fill="#3c783c"/><rect x="16" y="44" width="4" height="16" fill="#5c3e2c"/><circle cx="104" cy="34" r="10" fill="#3c783c"/><rect x="102" y="42" width="4" height="16" fill="#5c3e2c"/></svg>
+          </div>
+        </div>
+      </article>
+      <p class="llega">Así llega a tu WhatsApp el parte de cada ronda.</p>
+    </div>
+  </div>
+</section>
+
+<section class="tramo blanco" id="rondines">
+  <div class="cont dos">
+    <div>
+      <h2>Sabes quién entra a tu casa</h2>
+      <p class="intro">Tu casa queda a cargo de un rondín: personal retirado del Ejército, la Armada, la Fuerza Aérea, Carabineros o la PDI. Gente formada en disciplina, puntualidad y cuidado de lo ajeno.</p>
+      <p>Y antes de que viajes, lo conoces en persona.</p>
+    </div>
+    <ul class="verif">
+      <li><strong>Certificado de retiro</strong>Cada rondín acredita su carrera con el certificado de retiro de su institución.</li>
+      <li><strong>Antecedentes al día</strong>Sin certificado de antecedentes vigente, nadie recibe una casa.</li>
+      <li><strong>Entrevista personal</strong>Conversamos con cada postulante antes de asignarle una casa.</li>
+      <li><strong>Visita de presentación</strong>El rondín va a tu casa antes del viaje: recorre contigo, recibe las llaves y tus instrucciones. Sin costo.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="tramo" id="ronda">
+  <div class="cont">
+    <h2>Qué hace el rondín en cada ronda</h2>
+    <p class="intro">La casa y las mascotas reciben la misma atención. Cada tarea se marca en el parte que te llega al terminar.</p>
+    <ul class="ronda-lista">
+      <li>Ronda de seguridad: puertas, ventanas, rejas y accesos</li>
+      <li>Luces, cortinas y ventilación, para que la casa se vea habitada</li>
+      <li>Riego de plantas y jardín</li>
+      <li>Retiro de correspondencia y encomiendas</li>
+      <li>Basura y reciclaje</li>
+      <li>Alimento y agua fresca para tus mascotas</li>
+      <li>Revisión del estado de cada mascota</li>
+      <li>Paseo de perros y medicamentos, si los contratas</li>
+      <li>Revisión de la piscina: nivel, filtro y limpieza superficial</li>
+      <li>Mínimo cuatro fotos por ronda</li>
+    </ul>
+    <div class="hoja-cliente">
+      <h3>Tu hoja de tareas</h3>
+      <p>¿Las orquídeas se riegan solo los lunes? ¿El gato come en el segundo piso? Lo anotas en tu hoja y el rondín lo encuentra en su lista, junto a las tareas de siempre.</p>
+    </div>
+  </div>
+</section>
+
+<section class="tramo oscuro" id="como">
+  <div class="cont">
+    <h2>Postulas una vez, reservas cada vez que viajas</h2>
+    <p class="intro mut">No atendemos casas que no conocemos. Por eso el primer paso es postular la tuya.</p>
+    <ol class="pasos">
+      <li><strong>Postula tu casa</strong><p>Completa la ficha: dirección, mascotas, piscina y lo que necesitas. Te respondemos por WhatsApp.</p></li>
+      <li><strong>Queda aprobada</strong><p>Revisamos tu ficha y te enviamos tu portal personal, donde quedan guardadas tus instrucciones.</p></li>
+      <li><strong>Reserva en un minuto</strong><p>Eliges fechas y plan. El abono del 50 % confirma la reserva y coordinamos la visita de presentación.</p></li>
+      <li><strong>Viaja con el parte al día</strong><p>Después de cada ronda te llega el parte por WhatsApp. Si hay una novedad, lo sabes de inmediato.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="tramo" id="planes">
+  <div class="cont">
+    <h2>Planes y precios</h2>
+    <p class="intro">Precio por día, con hasta dos mascotas incluidas. Atendemos en Santiago.</p>
+    <div class="dos">
+      <form id="cotizador" novalidate>
+        <span class="rotulo">Plan</span>
+        <div class="opciones" id="planes-op">
+          <label class="opcion"><input type="radio" name="plan" value="basico" checked><div><strong>Básico</strong>Una ronda al día<span class="precio-dia" data-precio="basico">$22.000 <small>por día</small></span></div></label>
+          <label class="opcion"><input type="radio" name="plan" value="plus"><div><strong>Plus</strong>Dos rondas al día, mañana y tarde<span class="precio-dia" data-precio="plus">$38.000 <small>por día</small></span></div></label>
+          <label class="opcion"><input type="radio" name="plan" value="full"><div><strong>Full</strong>El rondín duerme en tu casa<span class="precio-dia" data-precio="full">$85.000 <small>por día</small></span></div></label>
+        </div>
+        <div class="fila">
+          <label class="campo"><span>Sales el</span><input type="date" name="inicio" required></label>
+          <label class="campo"><span>Vuelves el</span><input type="date" name="fin" required></label>
+        </div>
+        <label class="campo"><span>Mascotas</span><input type="number" name="mascotas" min="0" max="20" value="1" inputmode="numeric"></label>
+        <label class="marcar"><input type="checkbox" name="paseo"><span>Paseo diario de perros <span class="mut" data-extra="paseo">(+$8.000 por día)</span></span></label>
+        <label class="marcar"><input type="checkbox" name="meds"><span>Dar medicamentos a mascotas <span class="mut" data-extra="meds">(+$5.000 por día)</span></span></label>
+      </form>
+      <div class="hoja" aria-live="polite">
+        <h3>Tu cotización</h3>
+        <div id="resultado"><p class="mut">Elige las fechas de tu viaje para ver el valor.</p></div>
+        <p class="chico mut" style="margin:14px 0 0" id="reglas-txt">Mínimo 5 días y 3 días de anticipación. Recargo de 25 % en feriados. 10 % de descuento desde 14 días.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tramo blanco" id="mensual">
+  <div class="cont">
+    <h2>Plan mensual para quienes viajan seguido</h2>
+    <p class="intro">Un valor fijo al mes con días de cuidado incluidos. Para quienes salen por trabajo o reparten el año entre dos casas.</p>
+    <div class="niveles" id="niveles">
+      <div class="nivel"><h3>Viajero</h3><b>$109.000</b>6 días Básico al mes</div>
+      <div class="nivel"><h3>Frecuente</h3><b>$169.000</b>10 días Básico al mes</div>
+      <div class="nivel"><h3>Frecuente Plus</h3><b>$299.000</b>10 días Plus al mes</div>
+    </div>
+    <ul class="ventajas">
+      <li>Sin mínimo de días por viaje: también cubre escapadas de fin de semana.</li>
+      <li>Prioridad en la agenda.</li>
+      <li>15 % de descuento en los días adicionales.</li>
+      <li>Permanencia mínima de <span id="min-meses">2</span> meses. Los días que no uses en el mes no se acumulan.</li>
+    </ul>
+    <p style="margin-top:18px">Se contrata desde tu portal, una vez aprobada tu casa.</p>
+  </div>
+</section>
+
+<section class="tramo" id="postular">
+  <div class="angosto">
+    <h2>Postula tu casa</h2>
+    <p class="intro">Toma unos tres minutos. Con la ficha aprobada, reservas cada vez que lo necesites sin repetir tus datos.</p>
+    <form id="form-postular" class="hoja" novalidate>
+      <div class="fila">
+        <label class="campo"><span>Nombre y apellido</span><input type="text" name="nombre" autocomplete="name" required></label>
+        <label class="campo"><span>WhatsApp</span><input type="tel" name="telefono" autocomplete="tel" placeholder="9 1234 5678" required></label>
+      </div>
+      <label class="campo"><span>Correo <span class="mut">(opcional)</span></span><input type="email" name="email" autocomplete="email"></label>
+      <div class="fila">
+        <label class="campo"><span>Dirección de la casa</span><input type="text" name="direccion" autocomplete="street-address" required></label>
+        <label class="campo"><span>Comuna</span><input type="text" name="comuna" list="comunas" required></label>
+      </div>
+      <datalist id="comunas"><option>Las Condes<option>Vitacura<option>Lo Barnechea<option>La Reina<option>Providencia<option>Ñuñoa<option>Peñalolén<option>Huechuraba<option>La Florida<option>Macul<option>Santiago<option>San Miguel<option>Maipú<option>Colina</datalist>
+      <div class="fila">
+        <label class="campo"><span>Tipo de vivienda</span><select name="tipo_vivienda"><option>Casa</option><option>Departamento</option><option>Parcela</option></select></label>
+        <label class="campo"><span>¿Cada cuánto viajas?</span><select name="frecuencia_viajes"><option>Un par de veces al año</option><option>Cada dos o tres meses</option><option>Una vez al mes</option><option>Varias veces al mes</option></select></label>
+      </div>
+      <div class="fila">
+        <label class="campo"><span>Mascotas</span><input type="number" name="mascotas" min="0" max="20" value="0" inputmode="numeric"></label>
+        <label class="campo"><span>Plan que te interesa</span><select name="plan_interes"><option value="basico">Básico: una ronda al día</option><option value="plus">Plus: dos rondas al día</option><option value="full">Full: el rondín duerme en casa</option></select></label>
+      </div>
+      <label class="campo"><span>Cuéntanos de tus mascotas <span class="mut">(opcional)</span></span><textarea name="detalle_mascotas" placeholder="Nombre, especie, edad, carácter, comida"></textarea></label>
+      <label class="marcar"><input type="checkbox" name="piscina"><span>La casa tiene piscina</span></label>
+      <label class="marcar"><input type="checkbox" name="jardin"><span>La casa tiene jardín</span></label>
+      <label class="marcar"><input type="checkbox" name="interes_mensual"><span>Me interesa el plan mensual</span></label>
+      <label class="campo" style="margin-top:10px"><span>Tu hoja de tareas <span class="mut">(opcional)</span></span><textarea name="tareas_extra" placeholder="Una tarea por línea. Ejemplo: regar las orquídeas solo los lunes"></textarea><small>Se suman a las tareas de cada ronda. Puedes cambiarlas después desde tu portal.</small></label>
+      <label class="trampa" aria-hidden="true">No completar<input type="text" name="web" tabindex="-1" autocomplete="off"></label>
+      <div id="postular-error" class="error oculto" role="alert"></div>
+      <button class="btn ancho" type="submit" data-espera="Enviando tu postulación…">Enviar mi postulación</button>
+      <p class="chico mut" style="margin:12px 0 0">Usamos tus datos solo para evaluar tu postulación y coordinar el servicio.</p>
+    </form>
+    <div id="postular-ok" class="exito oculto" role="status">
+      <h3>Recibimos tu postulación</h3>
+      <p>La revisamos y te escribimos por WhatsApp con el resultado y el enlace a tu portal.</p>
+      <a class="btn sec" id="postular-wa" target="_blank" rel="noopener" href="#">Escribirnos por WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<section class="tramo blanco" id="preguntas">
+  <div class="cont">
+    <h2>Preguntas frecuentes</h2>
+    <details><summary>¿Cómo entrego las llaves?</summary><p>En la visita de presentación, antes del viaje. El rondín recorre la casa contigo, recibe las llaves y revisa tus instrucciones. Esa visita no tiene costo.</p></details>
+    <details><summary>¿Qué pasa si hay una emergencia?</summary><p>El rondín sigue un protocolo: ante un robo, una fuga de agua o gas, o una mascota enferma, avisa de inmediato a SafetyHome y a ti, llama al servicio de emergencia que corresponda o al veterinario de tu ficha, y deja todo registrado en el parte.</p></details>
+    <details><summary>¿Con cuánta anticipación debo reservar?</summary><p>Al menos <span data-regla="anticipacion">3</span> días antes de salir. El mínimo por reserva es de <span data-regla="min">5</span> días; con el plan mensual no hay mínimo.</p></details>
+    <details><summary>¿Cómo se paga?</summary><p>Por transferencia. El abono del 50 % confirma tu reserva y el saldo se paga antes de que comience el servicio.</p></details>
+    <details><summary>¿Puedo cancelar?</summary><p>Sí, desde tu portal. Si cancelas con menos de <span data-regla="cancelacion">48</span> horas de anticipación, el abono no se devuelve.</p></details>
+    <details><summary>¿Dónde atienden?</summary><p>Por ahora, solo en Santiago.</p></details>
+  </div>
+</section>
+</main>
+
+<footer class="pie">
+  <div class="cont">
+    <div><span class="marca">SafetyHome</span><p class="chico" style="margin:6px 0 0">Cuidado de casas y mascotas en Santiago.</p></div>
+    <div><a id="pie-wa" href="#" target="_blank" rel="noopener">Escríbenos por WhatsApp</a><br><a href="rondines.html">¿Estás en retiro? Postula como rondín</a></div>
+  </div>
+</footer>
+
+<script src="vendor/supabase.js"></script>
+<script src="assets/sh.js"></script>
+<script>
+(async function () {
+  const { $, $$, rpc, clp, esc, datos, lineas, hoyISO, masDias, wa, ocupado, mensaje } = SH;
+  let cfg = { precios: { basico: 22000, plus: 38000, full: 85000, paseo: 8000, meds: 5000, min_dias: 5, feriado_pct: .25, desc_14: .1 }, reglas: { anticipacion_dias: 3, cancelacion_horas: 48 }, whatsapp: '56945210814' };
+
+  function aplicarConfig() {
+    const p = cfg.precios || {}, r = cfg.reglas || {};
+    $$('[data-precio]').forEach((el) => { el.innerHTML = `${clp(p[el.dataset.precio])} <small>por día</small>`; });
+    $('[data-extra=paseo]').textContent = `(+${clp(p.paseo)} por día)`;
+    $('[data-extra=meds]').textContent = `(+${clp(p.meds)} por día)`;
+    $('#reglas-txt').textContent = `Mínimo ${p.min_dias} días y ${r.anticipacion_dias} días de anticipación. Recargo de ${Math.round(p.feriado_pct * 100)} % en feriados. ${Math.round(p.desc_14 * 100)} % de descuento desde 14 días.`;
+    $$('[data-regla=anticipacion]').forEach((e) => { e.textContent = r.anticipacion_dias; });
+    $$('[data-regla=min]').forEach((e) => { e.textContent = p.min_dias; });
+    $$('[data-regla=cancelacion]').forEach((e) => { e.textContent = r.cancelacion_horas; });
+    const m = cfg.membresias;
+    if (m && m.niveles && m.niveles.length) {
+      $('#niveles').innerHTML = m.niveles.map((n) => `<div class="nivel"><h3>${esc(n.nombre)}</h3><b>${clp(n.precio)}</b>${n.dias} días ${esc((SH.PLAN[n.plan] || {}).n || n.plan)} al mes</div>`).join('');
+      $('#min-meses').textContent = m.min_meses || 2;
+    }
+    const texto = 'Hola, quiero saber más de SafetyHome.';
+    $('#pie-wa').href = wa(cfg.whatsapp, texto);
+    $('#postular-wa').href = wa(cfg.whatsapp, 'Hola, acabo de postular mi casa en SafetyHome.');
+    const min = masDias(hoyISO(), r.anticipacion_dias || 3);
+    $('#cotizador [name=inicio]').min = min; $('#cotizador [name=fin]').min = min;
+  }
+  aplicarConfig();
+  rpc('safehome_config_publica').then((c) => { if (c) { cfg = Object.assign(cfg, c); aplicarConfig(); } }).catch(() => {});
+
+  // Cotizador: el cálculo lo hace el servidor, la misma función que usa la reserva.
+  const cot = $('#cotizador'); let turno = 0;
+  async function cotizar() {
+    const d = datos(cot), caja = $('#resultado');
+    if (!d.inicio || !d.fin) { caja.innerHTML = '<p class="mut">Elige las fechas de tu viaje para ver el valor.</p>'; return; }
+    const mio = ++turno;
+    try {
+      const r = await rpc('safehome_cotizar', { p_plan: d.plan, p_inicio: d.inicio, p_fin: d.fin, p_mascotas: d.mascotas || 0, p_extras: { paseo: d.paseo, meds: d.meds } });
+      if (mio !== turno) return;
+      if (!r.ok) { caja.innerHTML = `<div class="error">${esc(r.error)}</div>`; return; }
+      caja.innerHTML = r.lineas.map((l) => `<div class="dato"><span>${esc(l.t)}</span><span class="num">${l.m < 0 ? '−' + clp(-l.m) : clp(l.m)}</span></div>`).join('')
+        + `<div class="total"><span>Total por ${SH.plural(r.dias, 'día', 'días')}</span><b class="num">${clp(r.total)}</b></div>`
+        + `<p style="margin:8px 0 16px">Abono para confirmar: <strong class="num">${clp(r.abono)}</strong></p>`
+        + '<a class="btn ancho" href="#postular">Postular mi casa para reservar</a>';
+    } catch (e) { if (mio === turno) caja.innerHTML = `<div class="error">${esc(mensaje(e))}</div>`; }
+  }
+  cot.addEventListener('input', () => { const i = cot.inicio.value; if (i) cot.fin.min = i; cotizar(); });
+  cot.addEventListener('submit', (e) => e.preventDefault());
+
+  // Postulación
+  const form = $('#form-postular'), err = $('#postular-error');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); err.classList.add('oculto');
+    const d = datos(form); d.tareas_extra = lineas(d.tareas_extra);
+    const plan = datos(cot).plan; if (plan && !form.dataset.planTocado) d.plan_interes = d.plan_interes || plan;
+    try {
+      const r = await ocupado(form.querySelector('button[type=submit]'), () => rpc('safehome_postular_cliente', { p: d }));
+      if (!r.ok) { err.textContent = r.error; err.classList.remove('oculto'); err.scrollIntoView({ block: 'center' }); return; }
+      form.classList.add('oculto');
+      const ok = $('#postular-ok'); ok.classList.remove('oculto');
+      if (r.repetida) ok.querySelector('p').textContent = 'Ya teníamos una postulación con ese teléfono. Si aún no te respondemos, escríbenos por WhatsApp.';
+      ok.scrollIntoView({ block: 'center' });
+    } catch (ex) { err.textContent = mensaje(ex); err.classList.remove('oculto'); }
+  });
+})();
+</script>
+</body>
+</html>

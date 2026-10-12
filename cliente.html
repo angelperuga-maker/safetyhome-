@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi portal | SafetyHome</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#13233a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z' fill='%2346582f'/%3E%3Cpath d='M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/sh.css">
+<style>
+  main { padding: 26px 0 40px; }
+  h1 { font-size: clamp(2.2rem, 7vw, 3.2rem); }
+  h2 { font-size: 2rem; margin-top: 4px; }
+  .pestanas { display: flex; gap: 6px; overflow-x: auto; margin: 18px 0 22px; border-bottom: 2px solid var(--tinta); }
+  .pestanas button { font: 600 1.02rem var(--texto); background: none; border: 0; padding: 11px 16px; cursor: pointer; color: var(--pizarra); white-space: nowrap; border-radius: var(--radio) var(--radio) 0 0; }
+  .pestanas button[aria-selected=true] { background: var(--tinta); color: #fff; }
+  .reserva-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .reserva-cab h3 { margin: 0; }
+  .partes { display: grid; gap: 16px; margin-top: 16px; }
+  .ahora { background: var(--tinta); color: #fff; border-radius: var(--radio); padding: 18px 20px; margin-bottom: 18px; }
+  .ahora h2 { margin: 0 0 4px; }
+  .ahora p { margin: 0; color: #d3dbe6; }
+  .niveles { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .nivel { border: 1px solid var(--linea); border-top: 5px solid var(--bronce); border-radius: var(--radio); padding: 16px; background: #fff; display: flex; flex-direction: column; gap: 6px; }
+  .nivel b { font-family: var(--titulo); font-size: 2rem; line-height: 1.1; }
+  .nivel .btn { margin-top: auto; }
+  .uso { height: 12px; border-radius: 99px; background: var(--olivo-claro); overflow: hidden; margin: 8px 0 6px; }
+  .uso i { display: block; height: 100%; background: var(--olivo); }
+</style>
+</head>
+<body>
+<header class="cab">
+  <div class="angosto">
+    <a class="marca" href="./">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z" fill="#7d9a55"/><path d="M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z" fill="#fff"/></svg>
+      SafetyHome
+    </a>
+    <nav><a id="cab-wa" href="#" target="_blank" rel="noopener">WhatsApp</a></nav>
+  </div>
+</header>
+
+<main><div class="angosto" id="app"><p class="cargando">Cargando tu portal…</p></div></main>
+
+<script src="vendor/supabase.js"></script>
+<script src="assets/sh.js"></script>
+<script>
+(function () {
+  const { $, $$, rpc, fn, esc, clp, fecha, fechaLarga, fechaHora, plural, PLAN, chip, toast, datos, lineas, masDias, wa, ocupado, parteHTML, pintarFotos, mensaje } = SH;
+  const app = $('#app');
+  const q = new URLSearchParams(location.search);
+  const LLAVE = 'sh-cliente';
+  let token = (q.get('t') || '').trim().toUpperCase();
+  try { if (token) localStorage.setItem(LLAVE, token); else token = localStorage.getItem(LLAVE) || ''; } catch (e) {}
+  const verReserva = (q.get('r') || '').toUpperCase();
+  let P = null, pestana = 'reservas';
+
+  function sinAcceso() {
+    app.innerHTML = `<h1>Este enlace no es válido</h1>
+      <p>Abre tu portal desde el enlace que te enviamos por WhatsApp al aprobar tu casa. Si lo perdiste, pídelo de nuevo.</p>
+      <p><a class="btn" href="./#postular">Postular mi casa</a></p>`;
+  }
+
+  async function cargar() {
+    if (!token) return sinAcceso();
+    try { P = await rpc('safehome_cliente_portal', { p_token: token }); }
+    catch (e) { app.innerHTML = `<div class="error">${esc(mensaje(e))}</div><p><button class="btn" onclick="location.reload()">Reintentar</button></p>`; return; }
+    if (!P) { try { localStorage.removeItem(LLAVE); } catch (e) {} return sinAcceso(); }
+    $('#cab-wa').href = wa(P.config.whatsapp, 'Hola, soy ' + P.cliente.nombre + ' (cliente SafetyHome).');
+    pintar();
+  }
+
+  const lineasHTML = (ls) => (ls || []).map((l) => `<div class="dato"><span>${esc(l.t)}</span><span class="num">${l.m < 0 ? '−' + clp(-l.m) : clp(l.m)}</span></div>`).join('');
+
+  function transferenciaHTML() {
+    const t = P.transferencia || {};
+    if (!t.numero) return '<p class="mut" style="margin:0">Te enviaremos los datos de transferencia por WhatsApp.</p>';
+    return `<div class="dato"><span>Titular</span><span>${esc(t.nombre)}</span></div><div class="dato"><span>RUT</span><span>${esc(t.rut)}</span></div>
+      <div class="dato"><span>Banco</span><span>${esc(t.banco)}</span></div><div class="dato"><span>${esc(t.tipo || 'Cuenta')}</span><span class="num">${esc(t.numero)}</span></div>
+      ${t.email ? `<div class="dato"><span>Correo</span><span>${esc(t.email)}</span></div>` : ''}`;
+  }
+
+  function reservaHTML(r) {
+    const cancelable = ['cotizacion', 'contactado', 'confirmada'].includes(r.estado);
+    const falta = Math.max(r.total - r.pagado, 0);
+    let pago = '';
+    if (r.estado !== 'cancelada' && r.total > 0) {
+      pago = r.pagado >= r.total ? '<div class="exito" style="margin:12px 0 0">Pagada por completo.</div>'
+        : r.estado === 'cotizacion' && r.pagado < r.abono
+          ? `<div class="aviso" style="margin:12px 0 0"><strong>Para confirmarla, transfiere el abono de ${clp(r.abono - r.pagado)}.</strong><div style="margin-top:8px">${transferenciaHTML()}</div></div>`
+          : `<p class="mut" style="margin:12px 0 0">Pagado ${clp(r.pagado)}. ${r.estado === 'confirmada' ? `Saldo ${clp(falta)}, antes de que comience el servicio.` : `Saldo pendiente ${clp(falta)}.`}</p>`;
+    } else if (r.estado === 'cotizacion') pago = '<p class="mut" style="margin:12px 0 0">Cubierta por tu plan mensual. Te confirmamos en breve.</p>';
+    const rondin = r.rondin ? `${r.rondin.nombre}${r.rondin.institucion ? ', ' + r.rondin.institucion + ' (en retiro)' : ''}` : '';
+    return `<article class="hoja" id="res-${esc(r.codigo)}">
+      <div class="reserva-cab"><div><h3>${esc(fecha(r.fecha_inicio))} al ${esc(fecha(r.fecha_fin))}</h3>
+        <p class="mut" style="margin:2px 0 0">Plan ${esc((PLAN[r.plan] || {}).n || r.plan)}, ${plural(r.dias, 'día', 'días')}. Reserva ${esc(r.codigo)}</p></div>${chip(r.estado)}</div>
+      <hr class="sep">
+      <div class="dato"><span>Total</span><span class="num">${clp(r.total)}</span></div>
+      <div class="dato"><span>Rondín</span><span>${rondin ? esc(rondin) : 'Por asignar'}</span></div>
+      ${['confirmada', 'cotizacion', 'contactado'].includes(r.estado) ? `<div class="dato"><span>Visita de presentación</span><span>${r.presentacion_fecha ? esc(fechaHora(r.presentacion_fecha)) : 'Por coordinar'}</span></div>` : ''}
+      ${pago}
+      ${r.visitas.length ? `<details style="margin-top:14px" ${r.estado === 'en_curso' || r.codigo === verReserva ? 'open' : ''}><summary><strong>${plural(r.visitas.length, 'parte de ronda', 'partes de ronda')}</strong></summary><div class="partes">${r.visitas.map((v) => parteHTML(v, r.rondin && r.rondin.nombre)).join('')}</div></details>` : ''}
+      ${cancelable ? `<p style="margin:14px 0 0"><button class="enlace" type="button" data-cancelar="${esc(r.codigo)}">Cancelar esta reserva</button></p>` : ''}
+    </article>`;
+  }
+
+  function pintar() {
+    const c = P.cliente, m = P.membresia, pr = P.config.precios, rg = P.config.reglas;
+    const enCurso = P.reservas.find((r) => r.estado === 'en_curso');
+    const ultimo = enCurso && enCurso.visitas[0];
+    const min = masDias(P.hoy, rg.anticipacion_dias || 3);
+    const niveles = (P.config.membresias || {}).niveles || [];
+
+    const ahora = enCurso ? `<div class="ahora"><h2>Tu casa está en cuidado</h2><p>Hasta el ${esc(fechaLarga(enCurso.fecha_fin))}. ${ultimo ? `Último parte: ${esc(fechaHora(ultimo.hora_salida))}, ${ultimo.incidencia ? 'con novedad' : 'sin novedad'}.` : 'Aún no hay partes de esta reserva.'}</p></div>` : '';
+
+    const sReservas = P.reservas.length ? P.reservas.map(reservaHTML).join('')
+      : '<div class="hoja"><p>Aún no tienes reservas.</p><button class="btn" type="button" data-ir="reservar">Reservar mi primer viaje</button></div>';
+
+    const sReservar = `<form id="f-reservar" class="hoja" novalidate>
+        <span class="rotulo">Plan</span>
+        <div class="opciones">${['basico', 'plus', 'full'].map((k, i) => `<label class="opcion"><input type="radio" name="plan" value="${k}" ${(m && m.estado === 'activa' ? m.plan === k : i === 0) ? 'checked' : ''}><div><strong>${PLAN[k].n}</strong>${PLAN[k].d}<br><span class="num">${clp(pr[k])} por día</span></div></label>`).join('')}</div>
+        <div class="fila"><label class="campo"><span>Sales el</span><input type="date" name="inicio" min="${min}" required></label>
+        <label class="campo"><span>Vuelves el</span><input type="date" name="fin" min="${min}" required></label></div>
+        <label class="marcar"><input type="checkbox" name="paseo"><span>Paseo diario de perros <span class="mut">(+${clp(pr.paseo)} por día)</span></span></label>
+        <label class="marcar"><input type="checkbox" name="meds"><span>Dar medicamentos a mascotas <span class="mut">(+${clp(pr.meds)} por día)</span></span></label>
+        <label class="campo" style="margin-top:10px"><span>Algo especial para este viaje <span class="mut">(opcional)</span></span><textarea name="nota" placeholder="Ejemplo: el martes viene el jardinero"></textarea><small>Tus instrucciones y hoja de tareas de la ficha ya van incluidas.</small></label>
+        <div id="cot" aria-live="polite"><p class="mut">Elige las fechas para ver el valor.</p></div>
+        <div id="res-error" class="error oculto" role="alert"></div>
+        <button class="btn ancho" type="submit" data-espera="Enviando tu solicitud…" disabled>Solicitar reserva</button>
+      </form>`;
+
+    const sCasa = `<form id="f-casa" class="hoja" novalidate>
+        <p class="mut">${esc(c.direccion || '')}${c.comuna ? ', ' + esc(c.comuna) : ''}. Para cambiar la dirección, escríbenos por WhatsApp.</p>
+        <div class="fila"><label class="campo"><span>Mascotas</span><input type="number" name="mascotas" min="0" max="20" value="${Number(c.mascotas) || 0}" inputmode="numeric"></label>
+        <label class="campo"><span>Correo</span><input type="email" name="email" value="${esc(c.email || '')}"></label></div>
+        <label class="campo"><span>Sobre tus mascotas</span><textarea name="detalle_mascotas" placeholder="Nombre, especie, edad, carácter, comida">${esc(c.detalle_mascotas || '')}</textarea></label>
+        <label class="marcar"><input type="checkbox" name="piscina" ${c.piscina ? 'checked' : ''}><span>La casa tiene piscina</span></label>
+        <label class="marcar"><input type="checkbox" name="jardin" ${c.jardin ? 'checked' : ''}><span>La casa tiene jardín</span></label>
+        <label class="campo" style="margin-top:10px"><span>Tu hoja de tareas</span><textarea name="tareas_extra" rows="5" placeholder="Una tarea por línea">${esc((c.tareas_extra || []).join('\n'))}</textarea><small>El rondín las verá en su lista en cada ronda, junto a las tareas de siempre.</small></label>
+        <label class="campo"><span>Instrucciones de la casa</span><textarea name="instrucciones" rows="4" placeholder="Llaves de paso, alarma, qué luces dejar encendidas">${esc(c.instrucciones || '')}</textarea></label>
+        <label class="campo"><span>Contacto de emergencia</span><input type="text" name="contacto_emergencia" value="${esc(c.contacto_emergencia || '')}" placeholder="Nombre, relación y teléfono"></label>
+        <label class="campo"><span>Veterinario</span><input type="text" name="veterinario" value="${esc(c.veterinario || '')}" placeholder="Clínica y teléfono"></label>
+        <button class="btn" type="submit" data-espera="Guardando…">Guardar cambios</button>
+        <p class="chico mut" style="margin:10px 0 0">Los cambios se aplican a tus próximas reservas.</p>
+      </form>`;
+
+    let sMensual;
+    if (m) {
+      const pct = Math.min(100, Math.round((m.usados_mes / m.dias_mes) * 100));
+      sMensual = `<div class="hoja"><div class="reserva-cab"><h3>Plan ${esc(m.nombre || m.nivel)}</h3>${chip(m.estado)}</div>
+        <p style="margin:6px 0 0">${m.dias_mes} días ${esc((PLAN[m.plan] || {}).n || m.plan)} al mes por <strong class="num">${clp(m.precio)}</strong>. Permanencia mínima de ${m.min_meses} meses.</p>
+        ${m.estado === 'activa' ? `<div class="uso"><i style="width:${pct}%"></i></div><p class="mut" style="margin:0">Este mes llevas ${m.usados_mes} de ${m.dias_mes} días.</p>`
+          : m.estado === 'solicitada' ? '<div class="aviso">Recibimos tu solicitud. Te escribimos por WhatsApp para activarlo.</div>' : ''}
+        </div>`;
+    } else {
+      sMensual = `<p>Un valor fijo al mes con días de cuidado incluidos, sin mínimo de días por viaje, con prioridad de agenda y ${Math.round((pr.desc_recurrente || 0) * 100)} % de descuento en días adicionales. Permanencia mínima de ${(P.config.membresias || {}).min_meses || 2} meses.</p>
+        <div class="niveles">${niveles.map((n) => `<div class="nivel"><h3 style="margin:0">${esc(n.nombre)}</h3><b class="num">${clp(n.precio)}</b><span>${n.dias} días ${esc((PLAN[n.plan] || {}).n || n.plan)} al mes</span><button class="btn sec" type="button" data-nivel="${esc(n.id)}" data-nombre="${esc(n.nombre)}" data-espera="Enviando…">Solicitar plan ${esc(n.nombre)}</button></div>`).join('')}</div>`;
+    }
+
+    app.innerHTML = `<h1>Hola, ${esc(c.nombre.split(' ')[0])}</h1>${ahora}
+      <div class="pestanas" role="tablist">
+        ${[['reservas', 'Mis reservas'], ['reservar', 'Reservar'], ['casa', 'Mi casa'], ['mensual', 'Plan mensual']].map(([k, t]) => `<button role="tab" type="button" data-pestana="${k}" aria-selected="${pestana === k}">${t}</button>`).join('')}
+      </div>
+      <section data-panel="reservas">${sReservas}</section>
+      <section data-panel="reservar"><h2>Reservar un viaje</h2>${sReservar}</section>
+      <section data-panel="casa"><h2>La ficha de tu casa</h2>${sCasa}</section>
+      <section data-panel="mensual"><h2>Plan mensual</h2>${sMensual}</section>`;
+    mostrar(pestana);
+    conectar();
+    if (verReserva && pestana === 'reservas') { const el = document.getElementById('res-' + verReserva); if (el) el.scrollIntoView({ block: 'start' }); }
+  }
+
+  function mostrar(k) {
+    pestana = k;
+    $$('[data-panel]').forEach((s) => s.classList.toggle('oculto', s.dataset.panel !== k));
+    $$('[data-pestana]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.pestana === k)));
+  }
+
+  function conectar() {
+    $$('[data-pestana]').forEach((b) => b.addEventListener('click', () => mostrar(b.dataset.pestana)));
+    $$('[data-ir]').forEach((b) => b.addEventListener('click', () => mostrar(b.dataset.ir)));
+
+    $$('[data-cancelar]').forEach((b) => b.addEventListener('click', async () => {
+      const r0 = P.reservas.find((x) => x.codigo === b.dataset.cancelar);
+      const horas = (new Date(r0.fecha_inicio + 'T00:00:00-03:00') - Date.now()) / 36e5;
+      const aviso = r0.pagado > 0 && horas < (P.config.reglas.cancelacion_horas || 48) ? '\n\nQuedan menos de ' + (P.config.reglas.cancelacion_horas || 48) + ' horas: el abono no se devuelve.' : '';
+      if (!confirm('¿Cancelar la reserva del ' + fecha(r0.fecha_inicio) + ' al ' + fecha(r0.fecha_fin) + '?' + aviso)) return;
+      try {
+        const r = await rpc('safehome_reserva_cancelar', { p_token: token, p_codigo: r0.codigo });
+        if (!r.ok) return toast(r.error, true);
+        toast('Reserva cancelada'); await cargar();
+      } catch (ex) { toast(mensaje(ex), true); }
+    }));
+
+    // Reservar: cotiza en vivo con la misma función que usa el servidor al guardar.
+    const f = $('#f-reservar'), boton = f.querySelector('button[type=submit]'); let turno = 0;
+    async function cotizar() {
+      const d = datos(f), caja = $('#cot'); boton.disabled = true;
+      if (!d.inicio || !d.fin) { caja.innerHTML = '<p class="mut">Elige las fechas para ver el valor.</p>'; return; }
+      const mio = ++turno;
+      try {
+        const r = await rpc('safehome_cotizar', { p_plan: d.plan, p_inicio: d.inicio, p_fin: d.fin, p_mascotas: P.cliente.mascotas || 0, p_extras: { paseo: d.paseo, meds: d.meds }, p_token: token });
+        if (mio !== turno) return;
+        if (!r.ok) { caja.innerHTML = `<div class="error">${esc(r.error)}</div>`; return; }
+        caja.innerHTML = lineasHTML(r.lineas) + `<div class="total"><span>Total por ${plural(r.dias, 'día', 'días')}</span><b class="num">${clp(r.total)}</b></div>`
+          + (r.total > 0 ? `<p style="margin:8px 0 16px">Abono para confirmar: <strong class="num">${clp(r.abono)}</strong></p>` : '<p style="margin:8px 0 16px">Sin costo adicional: está cubierta por tu plan mensual.</p>');
+        boton.disabled = false;
+      } catch (ex) { if (mio === turno) caja.innerHTML = `<div class="error">${esc(mensaje(ex))}</div>`; }
+    }
+    f.addEventListener('input', (e) => { if (e.target.name === 'nota') return; if (f.inicio.value) f.fin.min = f.inicio.value; cotizar(); });
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault(); const err = $('#res-error'); err.classList.add('oculto'); const d = datos(f);
+      try {
+        const r = await ocupado(boton, () => rpc('safehome_reservar', { p_token: token, p_plan: d.plan, p_inicio: d.inicio, p_fin: d.fin, p_extras: { paseo: d.paseo, meds: d.meds }, p_nota: d.nota || null }));
+        if (!r.ok) { err.textContent = r.error; err.classList.remove('oculto'); return; }
+        toast('Solicitud enviada. Reserva ' + r.codigo); pestana = 'reservas'; await cargar(); window.scrollTo(0, 0);
+      } catch (ex) { err.textContent = mensaje(ex); err.classList.remove('oculto'); }
+    });
+
+    $('#f-casa').addEventListener('submit', async (e) => {
+      e.preventDefault(); const d = datos(e.target); d.tareas_extra = lineas(d.tareas_extra);
+      try {
+        const r = await ocupado(e.target.querySelector('button[type=submit]'), () => rpc('safehome_cliente_actualizar', { p_token: token, p: d }));
+        if (!r.ok) return toast(r.error, true);
+        toast('Ficha guardada'); pestana = 'casa'; await cargar();
+      } catch (ex) { toast(mensaje(ex), true); }
+    });
+
+    $$('[data-nivel]').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm('¿Solicitar el plan mensual ' + b.dataset.nombre + '? Te contactaremos para activarlo.')) return;
+      try {
+        const r = await ocupado(b, () => rpc('safehome_membresia_solicitar', { p_token: token, p_nivel: b.dataset.nivel }));
+        if (!r.ok) return toast(r.error, true);
+        toast('Solicitud enviada'); pestana = 'mensual'; await cargar();
+      } catch (ex) { toast(mensaje(ex), true); }
+    }));
+  }
+
+  // Fotos de un parte: se piden al abrirlas, con un enlace temporal.
+  app.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-ver-fotos]'); if (!b) return;
+    const caja = b.closest('[data-fotos]'); b.disabled = true; b.textContent = 'Cargando fotos…';
+    const r = await fn({ accion: 'fotos', token, visita: b.dataset.verFotos });
+    pintarFotos(caja, r.ok ? r.urls : []);
+  });
+
+  cargar();
+})();
+</script>
+</body>
+</html>

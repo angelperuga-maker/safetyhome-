@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Postula como rondín | SafetyHome</title>
+<meta name="description" content="SafetyHome busca personal en retiro de las Fuerzas Armadas, Carabineros y PDI para cuidar casas y mascotas en Santiago. Pago por cada casa visitada.">
+<meta name="theme-color" content="#13233a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z' fill='%2346582f'/%3E%3Cpath d='M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/sh.css">
+<style>
+  .portada { background: var(--tinta); color: #fff; padding: 44px 0 52px; }
+  .portada h1 { font-size: clamp(2.4rem, 8vw, 4.2rem); }
+  .portada p { font-size: 1.2rem; color: #d3dbe6; max-width: 34em; }
+  .req { display: grid; gap: 14px 32px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); list-style: none; padding: 0; margin: 28px 0 0; }
+  .req li { border-left: 4px solid #d7a955; padding-left: 14px; }
+  .req strong { display: block; font-family: var(--titulo); font-size: 1.35rem; }
+  main { padding: 40px 0 0; }
+  fieldset { border: 0; padding: 0; margin: 0 0 8px; }
+  legend { font-family: var(--titulo); font-weight: 600; font-size: 1.5rem; padding: 0; margin: 18px 0 12px; }
+  input[type=file] { width: 100%; font: inherit; padding: 10px; border: 1.5px dashed #9aa797; border-radius: var(--radio); background: #fff; }
+  .casillas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 12px; margin-bottom: 12px; }
+  .trampa { position: absolute; left: -9999px; }
+</style>
+</head>
+<body>
+<header class="cab">
+  <div class="cont">
+    <a class="marca" href="./">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z" fill="#7d9a55"/><path d="M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z" fill="#fff"/></svg>
+      SafetyHome
+    </a>
+    <nav><a href="ronda.html">Ya soy rondín</a></nav>
+  </div>
+</header>
+
+<section class="portada">
+  <div class="cont">
+    <h1>Su experiencia<br>sigue de servicio.</h1>
+    <p>SafetyHome cuida casas y mascotas mientras sus dueños viajan. Buscamos personal en retiro de las Fuerzas Armadas, Carabineros y la PDI para hacer las rondas en Santiago.</p>
+    <ul class="req">
+      <li><strong>El trabajo</strong>Rondas diarias en casas asignadas: seguridad, riego, correspondencia y atención de mascotas. Todo se registra desde el teléfono.</li>
+      <li><strong>El pago</strong>Se paga por cada casa visitada. Usted define su disponibilidad y las comunas donde puede atender.</li>
+      <li><strong>Los requisitos</strong>Certificado de retiro, certificado de antecedentes vigente, teléfono con cámara y trato cuidadoso con animales.</li>
+    </ul>
+  </div>
+</section>
+
+<main>
+  <div class="angosto">
+    <h2>Postulación</h2>
+    <form id="form" class="hoja" novalidate>
+      <fieldset>
+        <legend>Datos personales</legend>
+        <div class="fila">
+          <label class="campo"><span>Nombre y apellidos</span><input type="text" name="nombre" autocomplete="name" required></label>
+          <label class="campo"><span>RUT</span><input type="text" name="rut" placeholder="12.345.678-9"></label>
+        </div>
+        <div class="fila">
+          <label class="campo"><span>WhatsApp</span><input type="tel" name="telefono" autocomplete="tel" placeholder="9 1234 5678" required></label>
+          <label class="campo"><span>Correo <span class="mut">(opcional)</span></span><input type="email" name="email" autocomplete="email"></label>
+        </div>
+        <div class="fila">
+          <label class="campo"><span>Comuna donde vive</span><input type="text" name="comuna"></label>
+          <label class="campo"><span>Edad</span><input type="number" name="edad" min="18" max="90" inputmode="numeric"></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Carrera</legend>
+        <div class="fila">
+          <label class="campo"><span>Institución</span><select name="institucion" required><option value="">Elegir…</option><option>Ejército de Chile</option><option>Armada de Chile</option><option>Fuerza Aérea de Chile</option><option>Carabineros de Chile</option><option>Policía de Investigaciones</option></select></label>
+          <label class="campo"><span>Grado al retiro</span><input type="text" name="grado" placeholder="Ejemplo: Suboficial"></label>
+        </div>
+        <label class="campo"><span>Año de retiro</span><input type="number" name="anio_retiro" min="1970" max="2030" inputmode="numeric"></label>
+        <label class="campo"><span>Experiencia que quiera destacar <span class="mut">(opcional)</span></span><textarea name="experiencia" placeholder="Especialidad, trabajos posteriores al retiro, experiencia con animales"></textarea></label>
+      </fieldset>
+      <fieldset>
+        <legend>Disponibilidad</legend>
+        <span class="rotulo">Animales que puede atender</span>
+        <div class="casillas">
+          <label class="marcar"><input type="checkbox" name="mascotas" value="Perros" data-lista="1"><span>Perros</span></label>
+          <label class="marcar"><input type="checkbox" name="mascotas" value="Gatos" data-lista="1"><span>Gatos</span></label>
+          <label class="marcar"><input type="checkbox" name="mascotas" value="Aves" data-lista="1"><span>Aves</span></label>
+          <label class="marcar"><input type="checkbox" name="mascotas" value="Otros" data-lista="1"><span>Otros</span></label>
+        </div>
+        <label class="marcar"><input type="checkbox" name="sabe_piscina"><span>Sé mantener una piscina (nivel, filtro, limpieza)</span></label>
+        <label class="marcar"><input type="checkbox" name="tiene_vehiculo"><span>Tengo vehículo propio</span></label>
+        <label class="marcar"><input type="checkbox" name="puede_dormir"><span>Puedo pernoctar en la casa del cliente</span></label>
+        <label class="campo" style="margin-top:10px"><span>Comunas donde puede atender</span><input type="text" name="zonas" placeholder="Ejemplo: Las Condes, La Reina, Ñuñoa"></label>
+        <label class="campo"><span>Días y horarios disponibles</span><input type="text" name="disponibilidad" placeholder="Ejemplo: todos los días, mañana y tarde"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Documentos</legend>
+        <p class="mut chico">Foto o PDF, máximo 8 MB cada uno. Si no los tiene a mano puede enviar la postulación y entregarlos después; son obligatorios para recibir casas.</p>
+        <label class="campo"><span>Certificado de retiro</span><input type="file" name="retiro" accept="image/jpeg,image/png,image/webp,application/pdf"></label>
+        <label class="campo"><span>Certificado de antecedentes</span><input type="file" name="antecedentes" accept="image/jpeg,image/png,image/webp,application/pdf"><small>Se obtiene gratis en registrocivil.cl</small></label>
+        <label class="campo"><span>Foto suya <span class="mut">(opcional)</span></span><input type="file" name="foto" accept="image/jpeg,image/png,image/webp"></label>
+      </fieldset>
+      <label class="trampa" aria-hidden="true">No completar<input type="text" name="web" tabindex="-1" autocomplete="off"></label>
+      <div id="error" class="error oculto" role="alert"></div>
+      <button class="btn ancho" type="submit" data-espera="Enviando su postulación…">Enviar mi postulación</button>
+    </form>
+    <div id="ok" class="exito oculto" role="status">
+      <h3>Recibimos su postulación</h3>
+      <p>La revisamos y lo contactamos por WhatsApp para coordinar una entrevista.</p>
+    </div>
+  </div>
+</main>
+
+<footer class="pie"><div class="cont"><span class="marca">SafetyHome</span><a href="./">Volver al sitio</a></div></footer>
+
+<script src="vendor/supabase.js"></script>
+<script src="assets/sh.js"></script>
+<script>
+(function () {
+  const { $, rpc, datos, subir, azar, ocupado, mensaje } = SH;
+  const form = $('#form'), err = $('#error');
+  const ext = (f) => (f.type === 'application/pdf' ? 'pdf' : 'jpg');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); err.classList.add('oculto');
+    const d = datos(form);
+    d.zonas = d.zonas ? d.zonas.split(',').map((s) => s.trim()).filter(Boolean) : [];
+    if (d.nombre.length < 3 || !d.telefono || !d.institucion) {
+      err.textContent = 'Complete su nombre, WhatsApp e institución.'; err.classList.remove('oculto'); err.scrollIntoView({ block: 'center' }); return;
+    }
+    try {
+      const r = await ocupado(form.querySelector('button[type=submit]'), async () => {
+        const carpeta = 'docs/' + azar();
+        for (const campo of ['retiro', 'antecedentes', 'foto']) {
+          const f = form[campo].files[0];
+          if (f) d[campo + '_url'] = await subir(`${carpeta}/${campo}.${ext(f)}`, f);
+        }
+        return rpc('safehome_postular_rondin', { p: d });
+      });
+      if (!r.ok) { err.textContent = r.error; err.classList.remove('oculto'); err.scrollIntoView({ block: 'center' }); return; }
+      form.classList.add('oculto');
+      const ok = $('#ok'); ok.classList.remove('oculto');
+      if (r.repetida) ok.querySelector('p').textContent = 'Ya teníamos una postulación con ese teléfono. Lo contactaremos por WhatsApp.';
+      ok.scrollIntoView({ block: 'center' });
+    } catch (ex) { err.textContent = mensaje(ex); err.classList.remove('oculto'); err.scrollIntoView({ block: 'center' }); }
+  });
+})();
+</script>
+</body>
+</html>

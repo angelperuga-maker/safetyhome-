@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="es-CL" data-admin="1">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administración | SafetyHome</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#13233a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z' fill='%2346582f'/%3E%3Cpath d='M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/sh.css">
+<style>
+  body { font-size: 16px; }
+  main { padding: 20px 0 60px; }
+  h1 { font-size: 2.3rem; } h2 { font-size: 1.8rem; margin-top: 6px; } h3 { font-size: 1.3rem; }
+  .pestanas { display: flex; gap: 4px; overflow-x: auto; border-bottom: 2px solid var(--tinta); margin-bottom: 20px; }
+  .pestanas button { font: 600 .98rem var(--texto); background: none; border: 0; padding: 10px 13px; cursor: pointer; color: var(--pizarra); white-space: nowrap; border-radius: var(--radio) var(--radio) 0 0; }
+  .pestanas button[aria-selected=true] { background: var(--tinta); color: #fff; }
+  .pestanas .cta { background: var(--bronce); color: #fff; border-radius: 99px; font-size: .78rem; padding: 1px 7px; margin-left: 5px; }
+  .tabla-caja { overflow-x: auto; background: #fff; border: 1px solid var(--linea); border-radius: var(--radio); }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; }
+  th { text-align: left; font-weight: 600; color: var(--pizarra); font-size: .88rem; padding: 10px 12px; border-bottom: 2px solid var(--linea); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid #e6ebe3; vertical-align: top; }
+  tbody tr { cursor: pointer; } tbody tr:hover { background: #f4f7f1; } tbody tr:last-child td { border-bottom: 0; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .cifras div { background: #fff; border: 1px solid var(--linea); border-radius: var(--radio); padding: 12px 14px; }
+  .cifras b { font-family: var(--titulo); font-size: 2.1rem; display: block; line-height: 1.05; }
+  .pend { list-style: none; padding: 0; margin: 0; }
+  .pend li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 11px 14px; background: #fff; border: 1px solid var(--linea); border-left: 5px solid var(--bronce); border-radius: var(--radio); margin-bottom: 8px; }
+  .pend li.grave { border-left-color: var(--alerta); }
+  .barra-acc { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+  .cab-sec { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 24px; }
+  .pre { white-space: pre-line; }
+  .cfg-grupo { margin-bottom: 18px; }
+  .cfg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 14px; }
+  .filas-ed > div { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 8px; align-items: start; }
+  .filas-ed .campos { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .filas-ed input, .filas-ed select { min-height: 42px; padding: 8px 10px; }
+  .msg { white-space: pre-wrap; background: #f1f5ee; border-radius: var(--radio); padding: 12px; font-size: .93rem; }
+  code.cod { font: 600 1.15rem var(--texto); letter-spacing: .12em; background: var(--bronce-claro); padding: 2px 8px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header class="cab">
+  <div class="cont">
+    <span class="marca">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z" fill="#7d9a55"/><path d="M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z" fill="#fff"/></svg>
+      SafetyHome
+    </span>
+    <nav><a href="./" target="_blank" rel="noopener" class="sec">Ver sitio</a><a href="#" id="salir" class="oculto">Salir</a></nav>
+  </div>
+</header>
+
+<main><div class="cont" id="app"><p class="cargando">Cargando…</p></div></main>
+
+<dialog id="dlg"><div class="dlg-cab"><h3 id="dlg-titulo"></h3><button class="cerrar" type="button" id="dlg-cerrar" aria-label="Cerrar">×</button></div><div class="dlg-cuerpo" id="dlg-cuerpo"></div></dialog>
+
+<script src="vendor/supabase.js"></script>
+<script src="assets/sh.js"></script>
+<script>
+(function () {
+  const { db, rpc, fn, $, $$, esc, clp, fecha, fechaLarga, hora, fechaHora, hoyISO, tel, wa, mapa, plural, PLAN, chip, toast, datos, lineas, ocupado, subir, azar, parteHTML, pintarFotos, mensaje } = SH;
+  const app = $('#app'), dlg = $('#dlg');
+  const S = { clientes: [], reservas: [], rondines: [], visitas: [], pagos: [], membresias: [], avisos: [], cfg: {} };
+  let pestana = 'inicio', abierto = null;
+  const porId = (lista, id) => lista.find((x) => x.id === id);
+  const sitio = () => String((S.cfg.sitio || {}).url || location.href.replace(/admin\.html.*$/, '')).replace(/\/+$/, '');
+  const esPrueba = (x) => /^SEED PRUEBA/.test(x.notas || '');
+  const marca = (x) => (esPrueba(x) ? ' <span class="chip">prueba</span>' : '');
+
+  $('#dlg-cerrar').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => { abierto = null; });
+  $('#salir').addEventListener('click', async (e) => { e.preventDefault(); await db.auth.signOut(); location.reload(); });
+
+  // ---------- Ingreso ----------
+  function pantallaIngreso(error) {
+    $('#salir').classList.add('oculto');
+    app.innerHTML = `<div class="angosto" style="width:min(420px,100%)"><h1>Administración</h1>
+      <form id="ingreso" class="hoja">
+        <label class="campo"><span>Usuario o correo</span><input type="text" name="u" autocomplete="username" required></label>
+        <label class="campo"><span>Contraseña</span><input type="password" name="p" autocomplete="current-password" required></label>
+        ${error ? `<div class="error" role="alert">${esc(error)}</div>` : ''}
+        <button class="btn ancho" type="submit" data-espera="Entrando…">Entrar</button>
+      </form><p class="mut chico" style="margin-top:12px">Es el mismo usuario y contraseña del panel de Serviruta o de Nanys.</p></div>`;
+    $('#ingreso').addEventListener('submit', async (e) => {
+      e.preventDefault(); const u = e.target.u.value.trim().toLowerCase(), p = e.target.p.value;
+      await ocupado(e.target.querySelector('button'), async () => {
+        const { error: err } = await db.auth.signInWithPassword({ email: u.includes('@') ? u : u + '@serviruta.local', password: p });
+        if (err) return pantallaIngreso(/invalid/i.test(err.message) ? 'Usuario o contraseña incorrectos.' : mensaje(err));
+        await iniciar();
+      });
+    });
+  }
+
+  async function iniciar() {
+    const { data } = await db.auth.getSession();
+    if (!data.session) return pantallaIngreso();
+    let ok = false; try { ok = await rpc('safehome_is_admin'); } catch (e) { return pantallaIngreso(mensaje(e)); }
+    if (!ok) { await db.auth.signOut(); return pantallaIngreso('Ese usuario no tiene acceso a SafetyHome.'); }
+    $('#salir').classList.remove('oculto');
+    try { await cargar(); pintar(); } catch (e) { app.innerHTML = `<div class="error">${esc(mensaje(e))}</div>`; }
+  }
+
+  async function tabla(nombre, orden, limite) {
+    let q = db.from(nombre).select('*').order(orden || 'created_at', { ascending: false });
+    if (limite) q = q.limit(limite);
+    const { data, error } = await q; if (error) throw new Error(mensaje(error)); return data || [];
+  }
+  async function cargar() {
+    const [c, r, k, v, p, m, a, cfg] = await Promise.all([
+      tabla('safehome_clientes'), tabla('safehome_reservas', 'fecha_inicio'), tabla('safehome_cuidadores'), tabla('safehome_visitas', 'hora_llegada', 400),
+      tabla('safehome_pagos', 'created_at', 400), tabla('safehome_membresias'), tabla('safehome_avisos', 'created_at', 150), tabla('safehome_config', 'key'),
+    ]);
+    v.forEach((x) => { if (x.presentacion) x.tipo = 'presentacion'; });
+    Object.assign(S, { clientes: c, reservas: r, rondines: k, visitas: v, pagos: p, membresias: m, avisos: a });
+    S.cfg = {}; cfg.forEach((x) => { S.cfg[x.key] = x.value; });
+  }
+  async function refrescar() { await cargar(); pintar(); if (abierto) abrir(abierto.tipo, abierto.id); }
+  async function guardar(tablaN, id, cambios, okMsg) {
+    const { error } = await db.from(tablaN).update(cambios).eq('id', id);
+    if (error) return toast(mensaje(error), true);
+    if (okMsg) toast(okMsg); await refrescar();
+  }
+  async function insertar(tablaN, fila, okMsg) {
+    const { error } = await db.from(tablaN).insert(fila);
+    if (error) { toast(mensaje(error), true); return false; }
+    if (okMsg) toast(okMsg); await refrescar(); return true;
+  }
+
+  // ---------- Cálculos ----------
+  const pendientePago = (kid) => S.visitas.filter((v) => v.cuidador_id === kid && v.hora_salida && !v.pago_id && v.pago_monto > 0);
+  const nombreRondin = (id) => (porId(S.rondines, id) || {}).nombre || 'Sin asignar';
+  function atencion() {
+    const hoy = hoyISO(), items = [], en7 = SH.masDias(hoy, 7), hace7 = SH.masDias(hoy, -7);
+    S.clientes.filter((c) => c.estado === 'postulante').forEach((c) => items.push({ t: `Postulación de cliente: ${c.nombre}, ${c.comuna || 'sin comuna'}`, a: ['cliente', c.id] }));
+    S.rondines.filter((k) => k.estado === 'postulante').forEach((k) => items.push({ t: `Postulación de rondín: ${k.nombre}${k.institucion ? ', ' + k.institucion : ''}`, a: ['rondin', k.id] }));
+    S.membresias.filter((m) => m.estado === 'solicitada').forEach((m) => items.push({ t: `Solicitud de plan mensual ${m.nombre || m.nivel}: ${(porId(S.clientes, m.cliente_id) || {}).nombre || ''}`, a: ['membresia', m.id] }));
+    S.reservas.filter((r) => ['cotizacion', 'contactado'].includes(r.estado)).forEach((r) => items.push({ t: `Reserva ${r.codigo} por confirmar: ${r.nombre}, desde el ${fecha(r.fecha_inicio)}${r.pagado >= r.abono && r.total > 0 ? ' (abono recibido)' : ''}`, a: ['reserva', r.id] }));
+    S.reservas.filter((r) => r.estado === 'confirmada' && !r.cuidador_id).forEach((r) => items.push({ t: `Reserva ${r.codigo} sin rondín asignado`, a: ['reserva', r.id], g: 1 }));
+    S.reservas.filter((r) => r.estado === 'confirmada' && !r.presentacion_fecha && r.fecha_inicio <= en7).forEach((r) => items.push({ t: `Reserva ${r.codigo}: falta coordinar la visita de presentación`, a: ['reserva', r.id] }));
+    S.visitas.filter((v) => v.incidencia && v.fecha >= hace7).forEach((v) => items.push({ t: `Ronda con novedad el ${fecha(v.fecha)}: ${(porId(S.reservas, v.reserva_id) || {}).nombre || ''}`, a: ['visita', v.id], g: 1 }));
+    return items;
+  }
+
+  // ---------- Pantallas ----------
+  const PEST = [['inicio', 'Inicio'], ['clientes', 'Clientes'], ['reservas', 'Reservas'], ['rondines', 'Rondines'], ['rondas', 'Rondas'], ['pagos', 'Pagos'], ['mensual', 'Plan mensual'], ['avisos', 'Avisos'], ['config', 'Configuración']];
+  function pintar() {
+    const at = atencion();
+    const cuerpo = { inicio: vInicio, clientes: vClientes, reservas: vReservas, rondines: vRondines, rondas: vRondas, pagos: vPagos, mensual: vMensual, avisos: vAvisos, config: vConfig }[pestana](at);
+    app.innerHTML = `<div class="pestanas" role="tablist">${PEST.map(([k, t]) => `<button role="tab" type="button" data-p="${k}" aria-selected="${k === pestana}">${t}${k === 'inicio' && at.length ? `<span class="cta">${at.length}</span>` : ''}</button>`).join('')}</div>${cuerpo}`;
+    $$('[data-p]').forEach((b) => b.addEventListener('click', () => { pestana = b.dataset.p; pintar(); }));
+    $$('[data-abrir]').forEach((el) => el.addEventListener('click', () => { const [t, id] = el.dataset.abrir.split(':'); abrir(t, id); }));
+    if (pestana === 'config') conectarConfig();
+    if (pestana === 'avisos') conectarAvisos();
+    if (pestana === 'pagos') conectarPagos();
+    const nc = $('#nuevo-cliente'); if (nc) nc.addEventListener('click', () => abrir('cliente-nuevo'));
+  }
+  const vacio = (t) => `<div class="hoja"><p class="mut" style="margin:0">${t}</p></div>`;
+  const tablaHTML = (cab, filas) => `<div class="tabla-caja"><table><thead><tr>${cab.map((c) => `<th${c.n ? ' class="n"' : ''}>${c.t || c}</th>`).join('')}</tr></thead><tbody>${filas.join('')}</tbody></table></div>`;
+
+  function vInicio(at) {
+    const hoy = hoyISO(), rd = (S.cfg.reglas || {}).rondas_dia || {};
+    const enCurso = S.reservas.filter((r) => ['confirmada', 'en_curso'].includes(r.estado) && r.fecha_inicio <= hoy && r.fecha_fin >= hoy);
+    const esperadas = enCurso.reduce((a, r) => a + (rd[r.plan] || 1), 0);
+    const hechas = S.visitas.filter((v) => v.fecha === hoy && v.hora_salida && v.tipo !== 'presentacion').length;
+    const porPagar = S.visitas.filter((v) => v.hora_salida && !v.pago_id).reduce((a, v) => a + (v.pago_monto || 0), 0);
+    const nCli = S.clientes.filter((c) => c.estado === 'aprobado').length, nRon = S.rondines.filter((k) => k.estado === 'activo').length;
+    const sinRonda = enCurso.filter((r) => S.visitas.filter((v) => v.reserva_id === r.id && v.fecha === hoy && v.hora_salida && v.tipo !== 'presentacion').length < (rd[r.plan] || 1));
+    return `<h1>Hoy, ${esc(fechaLarga(hoy))}</h1>
+      <div class="cifras">
+        <div><b class="num">${enCurso.length}</b>${enCurso.length === 1 ? 'casa' : 'casas'} en cuidado</div>
+        <div><b class="num">${hechas} de ${esperadas}</b>rondas de hoy</div>
+        <div><b class="num">${nCli}</b>${nCli === 1 ? 'cliente aprobado' : 'clientes aprobados'}</div>
+        <div><b class="num">${nRon}</b>${nRon === 1 ? 'rondín activo' : 'rondines activos'}</div>
+        <div><b class="num">${clp(porPagar)}</b>por pagar a rondines</div>
+      </div>
+      <h2>Requiere tu atención</h2>
+      ${at.length ? `<ul class="pend">${at.map((i) => `<li class="${i.g ? 'grave' : ''}"><span>${esc(i.t)}</span><button class="btn mini sec" type="button" data-abrir="${i.a.join(':')}">Abrir</button></li>`).join('')}</ul>` : vacio('Nada pendiente.')}
+      <h2 style="margin-top:26px">Rondas de hoy pendientes</h2>
+      ${sinRonda.length ? `<ul class="pend">${sinRonda.map((r) => `<li><span>${esc(r.nombre)}, ${esc(r.comuna || '')}. Rondín: ${esc(nombreRondin(r.cuidador_id))}</span><button class="btn mini sec" type="button" data-abrir="reserva:${r.id}">Abrir</button></li>`).join('')}</ul>` : vacio(enCurso.length ? 'Todas las rondas de hoy están hechas.' : 'No hay casas en cuidado hoy.')}`;
+  }
+
+  function vClientes() {
+    const filas = S.clientes.map((c) => `<tr data-abrir="cliente:${c.id}"><td><strong>${esc(c.nombre)}</strong>${marca(c)}<br><span class="mut">${esc(tel(c.telefono))}</span></td><td>${esc(c.comuna || '')}</td><td>${c.mascotas || 0}${c.piscina ? ', piscina' : ''}</td><td>${chip(c.estado)}</td><td>${esc(fecha(c.created_at))}</td></tr>`);
+    return `<div class="cab-sec"><h1>Clientes</h1><button class="btn mini" type="button" id="nuevo-cliente">Agregar cliente</button></div>${filas.length ? tablaHTML(['Cliente', 'Comuna', 'Mascotas', 'Estado', 'Postuló'], filas) : vacio('Aún no hay postulaciones. Llegan desde el formulario del sitio.')}`;
+  }
+  function vReservas() {
+    const filas = S.reservas.map((r) => `<tr data-abrir="reserva:${r.id}"><td><strong>${esc(r.codigo)}</strong>${marca(r)}</td><td>${esc(r.nombre)}<br><span class="mut">${esc(r.comuna || '')}</span></td><td>${esc(fecha(r.fecha_inicio))} al ${esc(fecha(r.fecha_fin))}<br><span class="mut">${esc((PLAN[r.plan] || {}).n || r.plan)}, ${plural(r.dias, 'día', 'días')}</span></td><td>${esc(nombreRondin(r.cuidador_id))}</td><td class="n">${clp(r.total)}<br><span class="mut">pagado ${clp(r.pagado)}</span></td><td>${chip(r.estado)}</td></tr>`);
+    return `<h1>Reservas</h1>${filas.length ? tablaHTML(['Código', 'Cliente', 'Fechas', 'Rondín', { t: 'Total', n: 1 }, 'Estado'], filas) : vacio('Aún no hay reservas. Los clientes aprobados reservan desde su portal.')}`;
+  }
+  function vRondines() {
+    const filas = S.rondines.map((k) => { const pp = pendientePago(k.id).reduce((a, v) => a + v.pago_monto, 0); return `<tr data-abrir="rondin:${k.id}"><td><strong>${esc(k.nombre)}</strong>${marca(k)}<br><span class="mut">${esc(tel(k.telefono))}</span></td><td>${esc([k.grado, k.institucion].filter(Boolean).join(', '))}</td><td>${esc(k.comuna || '')}</td><td>${k.retiro_url ? 'Retiro ✓' : 'Sin retiro'}<br>${k.antecedentes_url ? 'Antecedentes ✓' : 'Sin antecedentes'}</td><td class="n">${clp(pp)}</td><td>${chip(k.estado)}</td></tr>`; });
+    return `<div class="cab-sec"><h1>Rondines</h1><a class="btn mini sec" href="rondines.html" target="_blank" rel="noopener">Ver formulario de postulación</a></div>${filas.length ? tablaHTML(['Rondín', 'Carrera', 'Comuna', 'Documentos', { t: 'Por pagar', n: 1 }, 'Estado'], filas) : vacio('Aún no hay postulaciones de rondines.')}`;
+  }
+  function vRondas() {
+    const filas = S.visitas.map((v) => { const r = porId(S.reservas, v.reserva_id) || {}; return `<tr data-abrir="visita:${v.id}"><td>${esc(fecha(v.fecha))}<br><span class="mut num">${esc(hora(v.hora_llegada))} a ${v.hora_salida ? esc(hora(v.hora_salida)) : 'en curso'}</span></td><td>${esc(r.nombre || '')}<br><span class="mut">${esc(r.comuna || '')}</span></td><td>${esc(nombreRondin(v.cuidador_id))}</td><td>${v.tipo === 'presentacion' ? 'Presentación' : (v.incidencia ? '<span class="chip mal">Con novedad</span>' : '<span class="chip ok">Sin novedad</span>')}</td><td class="n">${(v.fotos || []).length}</td><td>${v.tipo === 'presentacion' || !v.hora_salida ? '' : (v.enviado_cliente ? 'Parte enviado' : '<span class="mut">Parte no enviado</span>')}</td></tr>`; });
+    return `<h1>Rondas</h1>${filas.length ? tablaHTML(['Fecha', 'Casa', 'Rondín', 'Resultado', { t: 'Fotos', n: 1 }, 'WhatsApp'], filas) : vacio('Aún no hay rondas registradas.')}`;
+  }
+  function vPagos() {
+    const porRondin = S.rondines.map((k) => ({ k, vs: pendientePago(k.id) })).filter((x) => x.vs.length);
+    const TIPO = { abono: 'Abono de cliente', saldo: 'Saldo de cliente', reembolso: 'Reembolso a cliente', pago_cuidador: 'Pago a rondín', membresia: 'Plan mensual' };
+    const filas = S.pagos.map((p) => { const r = porId(S.reservas, p.reserva_id), m = porId(S.membresias, p.membresia_id); const quien = p.cuidador_id ? nombreRondin(p.cuidador_id) : r ? `${r.nombre} (${r.codigo})` : m ? (porId(S.clientes, m.cliente_id) || {}).nombre : ''; return `<tr style="cursor:default"><td>${esc(fecha(p.fecha))}</td><td>${esc(m ? 'Plan mensual' : TIPO[p.tipo] || p.tipo)}</td><td>${esc(quien || '')}</td><td>${esc(p.medio || '')}</td><td class="n">${p.tipo === 'pago_cuidador' || p.tipo === 'reembolso' ? '−' : ''}${clp(p.monto)}</td></tr>`; });
+    return `<h1>Pagos</h1><h2>Por pagar a rondines</h2>
+      ${porRondin.length ? `<ul class="pend">${porRondin.map((x) => `<li><span><strong>${esc(x.k.nombre)}</strong>: ${plural(x.vs.length, 'ronda', 'rondas')}, <strong class="num">${clp(x.vs.reduce((a, v) => a + v.pago_monto, 0))}</strong></span><button class="btn mini" type="button" data-pagar="${x.k.id}" data-espera="Registrando…">Registrar pago</button></li>`).join('')}</ul>` : vacio('No hay rondas pendientes de pago.')}
+      <p class="mut chico">Se paga por casa visitada. El valor de cada ronda sale de Configuración, pago a rondines.</p>
+      <h2 style="margin-top:24px">Movimientos</h2>${filas.length ? tablaHTML(['Fecha', 'Tipo', 'A quién', 'Medio', { t: 'Monto', n: 1 }], filas) : vacio('Aún no hay movimientos.')}`;
+  }
+  function conectarPagos() {
+    $$('[data-pagar]').forEach((b) => b.addEventListener('click', async () => {
+      const k = porId(S.rondines, b.dataset.pagar), total = pendientePago(k.id).reduce((a, v) => a + v.pago_monto, 0);
+      if (!confirm(`¿Registrar el pago de ${clp(total)} a ${k.nombre}? Hazlo después de transferir.`)) return;
+      try { const r = await ocupado(b, () => rpc('safehome_pagar_rondin', { p_cuidador: k.id, p_medio: 'transferencia' })); if (!r.ok) return toast(r.error, true); toast('Pago registrado'); await refrescar(); }
+      catch (e) { toast(mensaje(e), true); }
+    }));
+  }
+  function vMensual() {
+    const mes = hoyISO().slice(0, 7);
+    const filas = S.membresias.map((m) => { const c = porId(S.clientes, m.cliente_id) || {}; const usados = S.reservas.filter((r) => r.membresia_id === m.id && r.estado !== 'cancelada' && String(r.fecha_inicio).slice(0, 7) === mes).reduce((a, r) => a + (r.dias_membresia || 0), 0); return `<tr data-abrir="membresia:${m.id}"><td><strong>${esc(c.nombre || '')}</strong></td><td>${esc(m.nombre || m.nivel)}<br><span class="mut">${m.dias_mes} días ${esc((PLAN[m.plan] || {}).n || m.plan)}</span></td><td class="n">${clp(m.precio)}</td><td class="n">${usados} de ${m.dias_mes}</td><td>${m.fecha_inicio ? esc(fecha(m.fecha_inicio)) : ''}</td><td>${chip(m.estado)}</td></tr>`; });
+    return `<h1>Plan mensual</h1>${filas.length ? tablaHTML(['Cliente', 'Plan', { t: 'Valor mensual', n: 1 }, { t: 'Días usados este mes', n: 1 }, 'Inicio', 'Estado'], filas) : vacio('Aún no hay planes mensuales. Los clientes aprobados lo solicitan desde su portal.')}`;
+  }
+  function vAvisos() {
+    const w = S.cfg.whatsapp || {};
+    const TIPO = { cliente_nuevo: 'Postulación de cliente', cliente_aprobado: 'Acceso al cliente', rondin_nuevo: 'Postulación de rondín', rondin_activo: 'Acceso al rondín', reserva_nueva: 'Reserva recibida (cliente)', reserva_nueva_admin: 'Reserva nueva', reserva_confirmada: 'Reserva confirmada', reserva_asignada: 'Casa asignada al rondín', ronda: 'Parte de ronda', ronda_novedad: 'Ronda con novedad', membresia_nueva: 'Solicitud de plan mensual' };
+    const filas = S.avisos.map((a) => `<tr data-abrir="aviso:${a.id}"><td>${esc(fechaHora(a.created_at))}</td><td>${esc(TIPO[a.tipo] || a.tipo)}</td><td>${esc(a.nombre || '')}<br><span class="mut">${esc(tel(a.destino))}</span></td><td>${chip(a.estado)}</td></tr>`);
+    return `<h1>Avisos por WhatsApp</h1>
+      <div class="hoja" style="margin-bottom:16px"><label class="marcar" style="padding:0"><input type="checkbox" id="envio" ${w.envio_activo ? 'checked' : ''}><span><strong>Enviar los avisos por WhatsApp</strong><br><span class="mut">Apagado, los mensajes se guardan aquí pero no salen. Sirve para probar sin escribirle a nadie.</span></span></label></div>
+      ${filas.length ? tablaHTML(['Fecha', 'Aviso', 'Para', 'Estado'], filas) : vacio('Aún no hay avisos.')}`;
+  }
+  function conectarAvisos() {
+    $('#envio').addEventListener('change', async (e) => {
+      const v = Object.assign({}, S.cfg.whatsapp, { envio_activo: e.target.checked });
+      const { error } = await db.from('safehome_config').upsert({ key: 'whatsapp', value: v, updated_at: new Date().toISOString() });
+      if (error) return toast(mensaje(error), true);
+      toast(e.target.checked ? 'Envío por WhatsApp activado' : 'Envío por WhatsApp apagado'); await refrescar();
+    });
+  }
+
+  // ---------- Fichas ----------
+  const dato = (k, v) => (v || v === 0 ? `<div class="dato"><span>${k}</span><span class="pre">${v}</span></div>` : '');
+  function abrir(tipo, id) {
+    abierto = { tipo, id };
+    const f = { cliente: fCliente, 'cliente-nuevo': fClienteNuevo, reserva: fReserva, rondin: fRondin, visita: fVisita, membresia: fMembresia, aviso: fAviso }[tipo];
+    const r = f(id); if (!r) return;
+    $('#dlg-titulo').textContent = r.titulo; $('#dlg-cuerpo').innerHTML = r.html;
+    if (!dlg.open) dlg.showModal();
+    if (r.conectar) r.conectar($('#dlg-cuerpo'));
+  }
+  const accion = (raiz, nombre, f) => $$(`[data-acc="${nombre}"]`, raiz).forEach((b) => b.addEventListener('click', (e) => f(e.currentTarget)));
+
+  function fCliente(id) {
+    const c = porId(S.clientes, id); if (!c) return;
+    const enlace = c.token ? `${sitio()}/cliente.html?t=${c.token}` : '';
+    const res = S.reservas.filter((r) => r.cliente_id === c.id);
+    return { titulo: c.nombre, html: `<p>${chip(c.estado)}${marca(c)} <span class="mut">Postuló el ${esc(fecha(c.created_at))}</span></p>
+      <div class="ficha"><div>${dato('WhatsApp', `<a href="${esc(wa(c.telefono))}" target="_blank" rel="noopener">${esc(tel(c.telefono))}</a>`)}${dato('Correo', esc(c.email))}${dato('Dirección', esc([c.direccion, c.comuna].filter(Boolean).join(', ')))}${dato('Vivienda', esc(c.tipo_vivienda))}</div>
+      <div>${dato('Mascotas', c.mascotas || 0)}${dato('Piscina', c.piscina ? 'Sí' : 'No')}${dato('Jardín', c.jardin ? 'Sí' : 'No')}${dato('Viaja', esc(c.frecuencia_viajes))}${dato('Plan de interés', esc((PLAN[c.plan_interes] || {}).n || c.plan_interes) + (c.interes_mensual ? ' + mensual' : ''))}</div></div>
+      ${c.detalle_mascotas ? `<h3 style="margin-top:14px">Mascotas</h3><p class="pre">${esc(c.detalle_mascotas)}</p>` : ''}
+      ${(c.tareas_extra || []).length ? `<h3>Hoja de tareas</h3><ul>${c.tareas_extra.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+      ${c.instrucciones ? `<h3>Instrucciones</h3><p class="pre">${esc(c.instrucciones)}</p>` : ''}
+      ${dato('Contacto de emergencia', esc(c.contacto_emergencia))}${dato('Veterinario', esc(c.veterinario))}
+      ${enlace ? `<h3 style="margin-top:14px">Portal del cliente</h3><p style="word-break:break-all"><a href="${esc(enlace)}" target="_blank" rel="noopener">${esc(enlace)}</a></p>
+        <div class="barra-acc" style="margin-top:0"><button class="btn mini sec" type="button" data-acc="copiar">Copiar enlace</button><a class="btn mini sec" target="_blank" rel="noopener" href="${esc(wa(c.telefono, `Hola ${c.nombre.split(' ')[0]}, este es tu portal de SafetyHome para reservar y ver los partes de cada ronda: ${enlace}`))}">Enviar por WhatsApp</a></div>` : ''}
+      ${res.length ? `<h3 style="margin-top:14px">Reservas</h3>${res.map((r) => `<div class="dato"><span>${esc(r.codigo)}: ${esc(fecha(r.fecha_inicio))} al ${esc(fecha(r.fecha_fin))}</span><span>${chip(r.estado)}</span></div>`).join('')}` : ''}
+      <label class="campo" style="margin-top:14px"><span>Notas internas</span><textarea id="notas">${esc(c.notas || '')}</textarea></label>
+      <div class="barra-acc">
+        ${c.estado !== 'aprobado' ? '<button class="btn" type="button" data-acc="aprobar">Aprobar cliente</button>' : ''}
+        ${c.estado === 'postulante' ? '<button class="btn peligro" type="button" data-acc="rechazar">Rechazar</button>' : ''}
+        ${c.estado === 'aprobado' ? '<button class="btn peligro" type="button" data-acc="suspender">Suspender acceso</button>' : ''}
+        <button class="btn sec" type="button" data-acc="notas">Guardar notas</button>
+      </div>
+      ${c.estado !== 'aprobado' ? '<p class="mut chico" style="margin-top:10px">Al aprobar se crea su portal y, si el envío está activo, le llega el enlace por WhatsApp.</p>' : ''}`,
+    conectar(raiz) {
+      accion(raiz, 'aprobar', () => guardar('safehome_clientes', c.id, { estado: 'aprobado' }, 'Cliente aprobado'));
+      accion(raiz, 'rechazar', () => { const m = prompt('Motivo del rechazo (interno):', ''); if (m === null) return; guardar('safehome_clientes', c.id, { estado: 'rechazado', motivo_rechazo: m }, 'Postulación rechazada'); });
+      accion(raiz, 'suspender', () => { if (confirm('¿Suspender el acceso de este cliente? Su portal dejará de funcionar.')) guardar('safehome_clientes', c.id, { estado: 'suspendido' }, 'Acceso suspendido'); });
+      accion(raiz, 'notas', () => guardar('safehome_clientes', c.id, { notas: $('#notas', raiz).value.trim() || null }, 'Notas guardadas'));
+      accion(raiz, 'copiar', async () => { try { await navigator.clipboard.writeText(enlace); toast('Enlace copiado'); } catch (e) { toast('No se pudo copiar. Selecciónalo y cópialo a mano.', true); } });
+    } };
+  }
+  function fClienteNuevo() {
+    return { titulo: 'Agregar cliente', html: `<p class="mut">Para clientes que llegan por teléfono o WhatsApp. Queda aprobado de inmediato.</p>
+      <form id="f-nc"><div class="fila"><label class="campo"><span>Nombre y apellido</span><input type="text" name="nombre" required></label><label class="campo"><span>WhatsApp</span><input type="tel" name="telefono" required></label></div>
+      <div class="fila"><label class="campo"><span>Dirección</span><input type="text" name="direccion" required></label><label class="campo"><span>Comuna</span><input type="text" name="comuna" required></label></div>
+      <div class="fila"><label class="campo"><span>Mascotas</span><input type="number" name="mascotas" min="0" value="0"></label><label class="campo"><span>Correo</span><input type="email" name="email"></label></div>
+      <label class="marcar"><input type="checkbox" name="piscina"><span>Tiene piscina</span></label>
+      <button class="btn" type="submit" style="margin-top:10px" data-espera="Guardando…">Guardar cliente</button></form>`,
+    conectar(raiz) {
+      $('#f-nc', raiz).addEventListener('submit', async (e) => {
+        e.preventDefault(); const d = datos(e.target);
+        if (!d.nombre || !d.telefono || !d.direccion || !d.comuna) return toast('Completa nombre, WhatsApp, dirección y comuna.', true);
+        d.telefono = SH.telDigitos(d.telefono); d.mascotas = d.mascotas || 0; d.estado = 'aprobado'; d.origen = 'admin';
+        if (await insertar('safehome_clientes', d, 'Cliente agregado')) { dlg.close(); pestana = 'clientes'; pintar(); }
+      });
+    } };
+  }
+
+  function fReserva(id) {
+    const r = porId(S.reservas, id); if (!r) return;
+    const activos = S.rondines.filter((k) => k.estado === 'activo');
+    const partes = S.visitas.filter((v) => v.reserva_id === r.id);
+    const pagos = S.pagos.filter((p) => p.reserva_id === r.id);
+    const falta = Math.max(r.total - r.pagado, 0);
+    const local = r.presentacion_fecha ? new Date(new Date(r.presentacion_fecha).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
+    return { titulo: `Reserva ${r.codigo}`, html: `<p>${chip(r.estado)}${marca(r)} <span class="mut">${esc(fechaLarga(r.fecha_inicio))} al ${esc(fechaLarga(r.fecha_fin))}</span></p>
+      <div class="ficha"><div>${dato('Cliente', `<a href="${esc(wa(r.telefono))}" target="_blank" rel="noopener">${esc(r.nombre)}</a>`)}${dato('Dirección', `<a href="${esc(mapa(r.direccion, r.comuna))}" target="_blank" rel="noopener">${esc([r.direccion, r.comuna].filter(Boolean).join(', '))}</a>`)}${dato('Plan', esc((PLAN[r.plan] || {}).n || r.plan) + ', ' + plural(r.dias, 'día', 'días'))}${dato('Mascotas', (r.mascotas || 0) + (r.piscina ? ', con piscina' : ''))}${dato('Extras', esc([r.extras && r.extras.paseo ? 'Paseo' : '', r.extras && r.extras.meds ? 'Medicamentos' : ''].filter(Boolean).join(', ')))}</div>
+      <div>${(r.desglose || []).map((l) => dato(esc(l.t), l.m < 0 ? '−' + clp(-l.m) : clp(l.m))).join('')}${dato('<strong>Total</strong>', `<strong>${clp(r.total)}</strong>`)}${dato('Abono para confirmar', clp(r.abono))}${dato('Pagado', clp(r.pagado))}${dato('Saldo', clp(falta))}</div></div>
+      ${r.instrucciones ? `<h3 style="margin-top:14px">Instrucciones</h3><p class="pre">${esc(r.instrucciones)}</p>` : ''}
+      <hr class="sep">
+      <div class="fila"><label class="campo"><span>Rondín asignado</span><select id="r-rondin"><option value="">Sin asignar</option>${activos.map((k) => `<option value="${k.id}" ${k.id === r.cuidador_id ? 'selected' : ''}>${esc(k.nombre)}${k.comuna ? ' (' + esc(k.comuna) + ')' : ''}</option>`).join('')}</select>${activos.length ? '' : '<small>No hay rondines activos todavía.</small>'}</label>
+      <label class="campo"><span>Visita de presentación</span><input type="datetime-local" id="r-pres" value="${local}"></label></div>
+      <button class="btn mini sec" type="button" data-acc="asignar">Guardar rondín y visita</button>
+      <hr class="sep">
+      <h3>Registrar pago del cliente</h3>
+      <div class="fila"><label class="campo"><span>Tipo</span><select id="p-tipo"><option value="abono">Abono</option><option value="saldo">Saldo</option><option value="reembolso">Reembolso</option></select></label>
+      <label class="campo"><span>Monto</span><input type="number" id="p-monto" min="0" step="1000" value="${r.pagado < r.abono ? r.abono - r.pagado : falta}"></label>
+      <label class="campo"><span>Medio</span><select id="p-medio"><option>transferencia</option><option>efectivo</option><option>otro</option></select></label></div>
+      <button class="btn mini sec" type="button" data-acc="pago">Registrar pago</button>
+      ${pagos.length ? pagos.map((p) => dato(`${esc(fecha(p.fecha))}: ${esc(p.tipo)} (${esc(p.medio || '')})`, clp(p.monto))).join('') : ''}
+      <div class="barra-acc">
+        ${['cotizacion', 'contactado'].includes(r.estado) ? '<button class="btn" type="button" data-acc="confirmar">Confirmar reserva</button>' : ''}
+        ${r.estado === 'en_curso' ? '<button class="btn" type="button" data-acc="finalizar">Marcar como finalizada</button>' : ''}
+        ${!['cancelada', 'finalizada'].includes(r.estado) ? '<button class="btn peligro" type="button" data-acc="cancelar">Cancelar reserva</button>' : ''}
+      </div>
+      ${partes.length ? `<h3 style="margin-top:18px">${plural(partes.length, 'visita registrada', 'visitas registradas')}</h3><div style="display:grid;gap:14px">${partes.map((v) => parteHTML(v, nombreRondin(v.cuidador_id))).join('')}</div>` : ''}`,
+    conectar(raiz) {
+      accion(raiz, 'asignar', () => { const p = $('#r-pres', raiz).value; guardar('safehome_reservas', r.id, { cuidador_id: $('#r-rondin', raiz).value || null, presentacion_fecha: p ? new Date(p).toISOString() : null }, 'Guardado'); });
+      accion(raiz, 'pago', async () => { const monto = Number($('#p-monto', raiz).value); if (!(monto > 0)) return toast('Escribe el monto.', true); await insertar('safehome_pagos', { reserva_id: r.id, tipo: $('#p-tipo', raiz).value, monto, medio: $('#p-medio', raiz).value }, 'Pago registrado'); });
+      accion(raiz, 'confirmar', () => { if (r.total > 0 && r.pagado < r.abono && !confirm(`Aún no está registrado el abono de ${clp(r.abono)}. ¿Confirmar de todos modos?`)) return; guardar('safehome_reservas', r.id, { estado: 'confirmada' }, 'Reserva confirmada'); });
+      accion(raiz, 'finalizar', () => guardar('safehome_reservas', r.id, { estado: 'finalizada' }, 'Reserva finalizada'));
+      accion(raiz, 'cancelar', () => { if (confirm('¿Cancelar esta reserva?')) guardar('safehome_reservas', r.id, { estado: 'cancelada' }, 'Reserva cancelada'); });
+      conectarFotos(raiz);
+    } };
+  }
+
+  // Fotos y documentos: como administrador se abren con un enlace temporal.
+  function conectarFotos(raiz) {
+    $$('[data-ver-fotos]', raiz).forEach((b) => b.addEventListener('click', async () => {
+      const v = porId(S.visitas, b.dataset.verFotos), caja = b.closest('[data-fotos]'); b.disabled = true; b.textContent = 'Cargando fotos…';
+      const { data } = await db.storage.from('safehome').createSignedUrls(v.fotos || [], 3600);
+      pintarFotos(caja, (data || []).filter((x) => x.signedUrl).map((x) => x.signedUrl));
+    }));
+  }
+  async function abrirDoc(ruta) {
+    const { data, error } = await db.storage.from('safehome').createSignedUrl(ruta, 600);
+    if (error || !data) return toast('No se pudo abrir el documento.', true);
+    window.open(data.signedUrl, '_blank', 'noopener');
+  }
+
+  function fRondin(id) {
+    const k = porId(S.rondines, id); if (!k) return;
+    const enlace = k.token ? `${sitio()}/ronda.html?c=${k.token}` : '';
+    const pend = pendientePago(k.id), hechas = S.visitas.filter((v) => v.cuidador_id === k.id && v.hora_salida && v.tipo !== 'presentacion').length;
+    const docs = [['retiro_url', 'Certificado de retiro'], ['antecedentes_url', 'Certificado de antecedentes'], ['foto_url', 'Foto']];
+    const completo = k.retiro_url && k.antecedentes_url;
+    return { titulo: k.nombre, html: `<p>${chip(k.estado)}${marca(k)} <span class="mut">Postuló el ${esc(fecha(k.created_at))}</span></p>
+      <div class="ficha"><div>${dato('WhatsApp', `<a href="${esc(wa(k.telefono))}" target="_blank" rel="noopener">${esc(tel(k.telefono))}</a>`)}${dato('RUT', esc(k.rut))}${dato('Comuna', esc(k.comuna))}${dato('Edad', k.edad)}${dato('Correo', esc(k.email))}</div>
+      <div>${dato('Institución', esc(k.institucion))}${dato('Grado al retiro', esc(k.grado))}${dato('Año de retiro', k.anio_retiro)}${dato('Rondas hechas', hechas)}${dato('Por pagar', clp(pend.reduce((a, v) => a + v.pago_monto, 0)))}</div></div>
+      ${dato('Atiende', esc((k.mascotas || []).join(', ')))}${dato('Piscina', k.sabe_piscina ? 'Sabe mantenerla' : 'No')}${dato('Vehículo', k.tiene_vehiculo ? 'Sí' : 'No')}${dato('Puede pernoctar', k.puede_dormir ? 'Sí' : 'No')}${dato('Comunas', esc((k.zonas || []).join(', ')))}${dato('Disponibilidad', esc(k.disponibilidad))}
+      ${k.experiencia ? `<h3 style="margin-top:14px">Experiencia</h3><p class="pre">${esc(k.experiencia)}</p>` : ''}
+      <h3 style="margin-top:14px">Documentos</h3>
+      ${docs.map(([campo, nombre]) => `<div class="dato"><span>${nombre}</span><span>${k[campo] ? `<button class="enlace" type="button" data-doc="${esc(k[campo])}">Ver</button> &nbsp; ` : '<span class="mut">Falta</span> &nbsp; '}<label class="enlace" style="cursor:pointer">${k[campo] ? 'Reemplazar' : 'Subir'}<input type="file" data-subir="${campo}" accept="image/jpeg,image/png,image/webp,application/pdf" hidden></label></span></div>`).join('')}
+      ${enlace ? `<h3 style="margin-top:14px">Acceso a su agenda</h3><p>Código <code class="cod">${esc(k.token)}</code></p>
+        <div class="barra-acc" style="margin-top:0"><a class="btn mini sec" target="_blank" rel="noopener" href="${esc(wa(k.telefono, `Hola ${k.nombre.split(' ')[0]}, tu código de rondín SafetyHome es ${k.token}. Tu agenda: ${enlace}`))}">Enviar por WhatsApp</a></div>` : ''}
+      <div class="fila" style="margin-top:14px"><label class="campo"><span>Evaluación (1 a 5)</span><input type="number" id="k-rating" min="1" max="5" step="0.1" value="${k.rating || ''}"></label></div>
+      <label class="campo"><span>Notas internas</span><textarea id="k-notas">${esc(k.notas || '')}</textarea></label>
+      ${!completo && k.estado !== 'activo' ? '<div class="aviso">Para activarlo faltan documentos: el certificado de retiro y el de antecedentes son obligatorios.</div>' : ''}
+      <div class="barra-acc">
+        ${k.estado === 'postulante' ? '<button class="btn sec" type="button" data-acc="entrevista">Pasar a entrevista</button>' : ''}
+        ${k.estado !== 'activo' ? `<button class="btn" type="button" data-acc="activar" ${completo ? '' : 'disabled'}>Activar rondín</button>` : '<button class="btn peligro" type="button" data-acc="inactivar">Desactivar</button>'}
+        ${['postulante', 'entrevista'].includes(k.estado) ? '<button class="btn peligro" type="button" data-acc="rechazar">Rechazar</button>' : ''}
+        <button class="btn sec" type="button" data-acc="notas">Guardar notas</button>
+      </div>`,
+    conectar(raiz) {
+      accion(raiz, 'entrevista', () => guardar('safehome_cuidadores', k.id, { estado: 'entrevista' }, 'Pasó a entrevista'));
+      accion(raiz, 'activar', () => guardar('safehome_cuidadores', k.id, { estado: 'activo' }, 'Rondín activado'));
+      accion(raiz, 'inactivar', () => { if (confirm('¿Desactivar a este rondín? Su código dejará de funcionar.')) guardar('safehome_cuidadores', k.id, { estado: 'inactivo' }, 'Rondín desactivado'); });
+      accion(raiz, 'rechazar', () => { if (confirm('¿Rechazar esta postulación?')) guardar('safehome_cuidadores', k.id, { estado: 'rechazado' }, 'Postulación rechazada'); });
+      accion(raiz, 'notas', () => guardar('safehome_cuidadores', k.id, { notas: $('#k-notas', raiz).value.trim() || null, rating: Number($('#k-rating', raiz).value) || null }, 'Guardado'));
+      $$('[data-doc]', raiz).forEach((b) => b.addEventListener('click', () => abrirDoc(b.dataset.doc)));
+      $$('[data-subir]', raiz).forEach((inp) => inp.addEventListener('change', async () => {
+        const f = inp.files[0]; if (!f) return; toast('Subiendo documento…');
+        try { const ruta = await subir(`docs/${azar()}/${inp.dataset.subir.replace('_url', '')}.${f.type === 'application/pdf' ? 'pdf' : 'jpg'}`, f); await guardar('safehome_cuidadores', k.id, { [inp.dataset.subir]: ruta }, 'Documento guardado'); }
+        catch (e) { toast(mensaje(e), true); }
+      }));
+    } };
+  }
+
+  function fVisita(id) {
+    const v = porId(S.visitas, id); if (!v) return; const r = porId(S.reservas, v.reserva_id) || {};
+    return { titulo: `${r.nombre || 'Ronda'}, ${fecha(v.fecha)}`, html: `${parteHTML(v, nombreRondin(v.cuidador_id))}
+      <div style="margin-top:14px">${dato('Casa', esc([r.direccion, r.comuna].filter(Boolean).join(', ')))}${v.lat ? dato('Ubicación al llegar', `<a href="https://www.google.com/maps?q=${v.lat},${v.lng}" target="_blank" rel="noopener">Ver en el mapa</a>`) : dato('Ubicación al llegar', 'No registrada')}${dato('Pago al rondín', clp(v.pago_monto) + (v.pago_id ? ' (pagado)' : v.pago_monto ? ' (pendiente)' : ''))}${v.tipo === 'presentacion' ? '' : dato('Parte por WhatsApp', v.enviado_cliente ? 'Enviado' : 'No enviado')}</div>
+      <div class="barra-acc">${r.id ? `<button class="btn mini sec" type="button" data-acc="reserva">Abrir reserva ${esc(r.codigo || '')}</button>` : ''}${v.hora_salida && v.tipo !== 'presentacion' && !v.enviado_cliente ? '<button class="btn mini sec" type="button" data-acc="reenviar" data-espera="Enviando…">Enviar el parte ahora</button>' : ''}</div>`,
+    conectar(raiz) {
+      conectarFotos(raiz);
+      accion(raiz, 'reserva', () => abrir('reserva', r.id));
+      accion(raiz, 'reenviar', async (b) => { const x = await ocupado(b, () => fn({ tipo: 'ronda', id: v.id, forzar: true, esperar: true })); const e0 = ((x.envios || [])[0] || {}).estado; toast(e0 === 'enviado' ? 'Parte enviado' : e0 === 'simulado' ? 'El envío por WhatsApp está apagado (pestaña Avisos).' : 'No se pudo enviar.', e0 !== 'enviado'); await refrescar(); });
+    } };
+  }
+
+  function fMembresia(id) {
+    const m = porId(S.membresias, id); if (!m) return; const c = porId(S.clientes, m.cliente_id) || {};
+    const pagos = S.pagos.filter((p) => p.membresia_id === m.id);
+    return { titulo: `Plan ${m.nombre || m.nivel}: ${c.nombre || ''}`, html: `<p>${chip(m.estado)}</p>
+      ${dato('Incluye', `${m.dias_mes} días ${esc((PLAN[m.plan] || {}).n || m.plan)} al mes`)}${dato('Valor mensual', clp(m.precio))}${dato('Permanencia mínima', m.min_meses + ' meses')}${dato('Inicio', m.fecha_inicio ? esc(fechaLarga(m.fecha_inicio)) : 'Sin activar')}${dato('Cliente', `<a href="${esc(wa(c.telefono))}" target="_blank" rel="noopener">${esc(c.nombre || '')}</a>`)}
+      <h3 style="margin-top:14px">Pagos mensuales</h3>${pagos.length ? pagos.map((p) => dato(esc(fecha(p.fecha)) + ' (' + esc(p.medio || '') + ')', clp(p.monto))).join('') : '<p class="mut">Sin pagos registrados.</p>'}
+      <div class="barra-acc">
+        ${m.estado !== 'activa' && m.estado !== 'terminada' ? '<button class="btn" type="button" data-acc="activar">Activar plan</button>' : ''}
+        ${m.estado === 'activa' ? '<button class="btn sec" type="button" data-acc="pago">Registrar pago del mes</button><button class="btn sec" type="button" data-acc="pausar">Pausar</button>' : ''}
+        ${m.estado !== 'terminada' ? '<button class="btn peligro" type="button" data-acc="terminar">Terminar plan</button>' : ''}
+      </div>`,
+    conectar(raiz) {
+      accion(raiz, 'activar', () => guardar('safehome_membresias', m.id, { estado: 'activa', fecha_inicio: m.fecha_inicio || hoyISO() }, 'Plan activado'));
+      accion(raiz, 'pausar', () => guardar('safehome_membresias', m.id, { estado: 'pausada' }, 'Plan en pausa'));
+      accion(raiz, 'terminar', () => { if (confirm('¿Terminar este plan mensual?')) guardar('safehome_membresias', m.id, { estado: 'terminada' }, 'Plan terminado'); });
+      accion(raiz, 'pago', () => { if (confirm(`¿Registrar el pago mensual de ${clp(m.precio)}?`)) insertar('safehome_pagos', { membresia_id: m.id, tipo: 'abono', monto: m.precio, medio: 'transferencia', nota: 'Plan mensual ' + (m.nombre || m.nivel) }, 'Pago registrado'); });
+    } };
+  }
+
+  function fAviso(id) {
+    const a = porId(S.avisos, id); if (!a) return;
+    const base = a.tipo.replace(/_admin$/, '').replace('ronda_novedad', 'ronda');
+    return { titulo: 'Aviso por WhatsApp', html: `<p>${chip(a.estado)} <span class="mut">${esc(fechaHora(a.created_at))}, para ${esc(a.nombre || '')} ${esc(tel(a.destino))}</span></p>
+      <div class="msg">${esc(a.mensaje || '')}</div>
+      <div class="barra-acc">${a.estado !== 'enviado' ? '<button class="btn mini" type="button" data-acc="reenviar" data-espera="Enviando…">Enviar ahora</button>' : ''}<a class="btn mini sec" target="_blank" rel="noopener" href="${esc(wa(a.destino, a.mensaje || ''))}">Abrir en mi WhatsApp</a></div>`,
+    conectar(raiz) {
+      accion(raiz, 'reenviar', async (b) => { const x = await ocupado(b, () => fn({ tipo: base, id: a.ref_id, forzar: true, esperar: true })); const algun = (x.envios || []).some((e) => e.estado === 'enviado'); toast(algun ? 'Aviso enviado' : (S.cfg.whatsapp || {}).envio_activo ? 'No se pudo enviar.' : 'El envío por WhatsApp está apagado.', !algun); dlg.close(); await refrescar(); });
+    } };
+  }
+
+  // ---------- Configuración ----------
+  const num = (nombre, etq, valor, extra) => `<label class="campo"><span>${etq}</span><input type="number" name="${nombre}" value="${valor == null ? '' : valor}" ${extra || 'min="0"'}></label>`;
+  const txt = (nombre, etq, valor, ph) => `<label class="campo"><span>${etq}</span><input type="text" name="${nombre}" value="${esc(valor || '')}" placeholder="${esc(ph || '')}"></label>`;
+  const pct = (v) => (v == null ? '' : Math.round(v * 1000) / 10);
+  function vConfig() {
+    const p = S.cfg.precios || {}, g = S.cfg.pago_cuidador || {}, r = S.cfg.reglas || {}, rd = r.rondas_dia || {}, t = S.cfg.transferencia || {}, w = S.cfg.whatsapp || {}, m = S.cfg.membresias || {};
+    const pruebas = S.clientes.filter(esPrueba).length + S.reservas.filter(esPrueba).length + S.rondines.filter(esPrueba).length;
+    return `<h1>Configuración</h1><form id="f-cfg">
+      <div class="hoja cfg-grupo"><h3>Precios al cliente, por día</h3><div class="cfg-grid">${num('p.basico', 'Plan Básico', p.basico)}${num('p.plus', 'Plan Plus', p.plus)}${num('p.full', 'Plan Full', p.full)}${num('p.mascota_extra', 'Mascota adicional', p.mascota_extra)}${num('p.paseo', 'Paseo de perros', p.paseo)}${num('p.meds', 'Medicamentos', p.meds)}</div>
+        <div class="cfg-grid">${num('p.min_dias', 'Mínimo de días', p.min_dias)}${num('p.feriado_pct', 'Recargo feriado (%)', pct(p.feriado_pct), 'min="0" step="0.5"')}${num('p.desc_14', 'Descuento 14 días o más (%)', pct(p.desc_14), 'min="0" step="0.5"')}${num('p.desc_recurrente', 'Descuento plan mensual (%)', pct(p.desc_recurrente), 'min="0" step="0.5"')}</div></div>
+      <div class="hoja cfg-grupo"><h3>Pago a rondines, por día de cada plan</h3><p class="mut chico">Se reparte entre las rondas del día: con 2 rondas diarias, cada ronda paga la mitad.</p><div class="cfg-grid">${num('g.basico', 'Básico', g.basico)}${num('g.plus', 'Plus', g.plus)}${num('g.full', 'Full (por noche)', g.full)}</div>
+        <div class="cfg-grid">${num('rd.basico', 'Rondas al día, Básico', rd.basico, 'min="1"')}${num('rd.plus', 'Rondas al día, Plus', rd.plus, 'min="1"')}${num('rd.full', 'Rondas al día, Full', rd.full, 'min="1"')}</div></div>
+      <div class="hoja cfg-grupo"><h3>Reglas de reserva</h3><div class="cfg-grid">${num('r.anticipacion_dias', 'Anticipación (días)', r.anticipacion_dias)}${num('r.cancelacion_horas', 'Cancelación sin costo hasta (horas)', r.cancelacion_horas)}${num('r.abono_pct', 'Abono para confirmar (%)', pct(r.abono_pct), 'min="0" max="100"')}${num('r.mascotas_incluidas', 'Mascotas incluidas', r.mascotas_incluidas)}${num('r.fotos_min', 'Fotos mínimas por ronda', r.fotos_min)}</div></div>
+      <div class="hoja cfg-grupo"><h3>Plan mensual</h3>${num('m.min_meses', 'Permanencia mínima (meses)', m.min_meses, 'min="1" style="max-width:220px"')}<span class="rotulo">Niveles</span><div class="filas-ed" id="ed-niveles"></div><button class="btn mini sec" type="button" data-agregar="niveles">Agregar nivel</button></div>
+      <div class="hoja cfg-grupo"><h3>Tareas de cada ronda</h3><p class="mut chico">Cada tarea aparece en la lista del rondín según la condición. La hoja de tareas de cada cliente se suma aparte.</p><div class="filas-ed" id="ed-tareas"></div><button class="btn mini sec" type="button" data-agregar="tareas">Agregar tarea</button></div>
+      <div class="hoja cfg-grupo"><h3>Datos para transferencias</h3><p class="mut chico">Se muestran al cliente cuando debe pagar el abono.</p><div class="cfg-grid">${txt('t.nombre', 'Titular', t.nombre)}${txt('t.rut', 'RUT', t.rut)}${txt('t.banco', 'Banco', t.banco)}${txt('t.tipo', 'Tipo de cuenta', t.tipo, 'Cuenta corriente')}${txt('t.numero', 'Número de cuenta', t.numero)}${txt('t.email', 'Correo para comprobantes', t.email)}</div></div>
+      <div class="hoja cfg-grupo"><h3>Contacto y sitio</h3><div class="cfg-grid">${txt('w.numero', 'WhatsApp de SafetyHome', w.numero, '569XXXXXXXX')}${txt('s.url', 'Dirección del sitio', (S.cfg.sitio || {}).url)}</div><p class="mut chico">El WhatsApp recibe las postulaciones y las novedades, y es el que ven clientes y rondines para escribir.</p></div>
+      <div class="hoja cfg-grupo"><h3>Feriados con recargo</h3><label class="campo"><span>Una fecha por línea, año-mes-día</span><textarea name="feriados" rows="6">${esc((S.cfg.feriados || []).join('\n'))}</textarea></label></div>
+      <div class="hoja cfg-grupo"><h3>Protocolo de emergencia del rondín</h3><label class="campo"><span>Un paso por línea</span><textarea name="protocolo" rows="6">${esc((S.cfg.protocolo || []).join('\n'))}</textarea></label></div>
+      <button class="btn" type="submit" data-espera="Guardando…">Guardar configuración</button></form>
+      <div class="hoja" style="margin-top:28px"><h3>Datos de prueba</h3><p>${pruebas ? `Hay ${plural(pruebas, 'registro marcado', 'registros marcados')} como prueba (cliente, rondín y reservas de demostración).` : 'No hay datos de prueba.'}</p>${pruebas ? '<button class="btn peligro" type="button" id="borrar-pruebas" data-espera="Borrando…">Borrar los datos de prueba</button>' : ''}</div>`;
+  }
+  const COND = [['siempre', 'Siempre'], ['mascotas', 'Si hay mascotas'], ['piscina', 'Si hay piscina'], ['paseo', 'Si contrató paseo'], ['meds', 'Si contrató medicamentos']];
+  const filaEd = {
+    niveles: (n) => `<div><div class="campos"><input type="text" data-k="nombre" value="${esc(n.nombre || '')}" placeholder="Nombre" aria-label="Nombre del nivel"><select data-k="plan" aria-label="Plan">${['basico', 'plus', 'full'].map((k) => `<option value="${k}" ${n.plan === k ? 'selected' : ''}>${PLAN[k].n}</option>`).join('')}</select><input type="number" data-k="dias" value="${n.dias || ''}" placeholder="Días al mes" aria-label="Días al mes" min="1"><input type="number" data-k="precio" value="${n.precio || ''}" placeholder="Valor mensual" aria-label="Valor mensual" min="0" step="1000"><input type="hidden" data-k="id" value="${esc(n.id || '')}"></div><button class="btn mini peligro" type="button" data-quitar aria-label="Quitar nivel">Quitar</button></div>`,
+    tareas: (t) => `<div><div class="campos" style="grid-template-columns:2fr 1fr"><input type="text" data-k="t" value="${esc(t.t || '')}" placeholder="Tarea" aria-label="Tarea"><select data-k="si" aria-label="Condición">${COND.map(([k, e]) => `<option value="${k}" ${t.si === k ? 'selected' : ''}>${e}</option>`).join('')}</select></div><button class="btn mini peligro" type="button" data-quitar aria-label="Quitar tarea">Quitar</button></div>`,
+  };
+  function conectarConfig() {
+    const ed = { niveles: $('#ed-niveles'), tareas: $('#ed-tareas') };
+    ed.niveles.innerHTML = ((S.cfg.membresias || {}).niveles || []).map(filaEd.niveles).join('');
+    ed.tareas.innerHTML = (S.cfg.tareas || []).map(filaEd.tareas).join('');
+    $$('[data-agregar]').forEach((b) => b.addEventListener('click', () => ed[b.dataset.agregar].insertAdjacentHTML('beforeend', filaEd[b.dataset.agregar]({}))));
+    $('#f-cfg').addEventListener('click', (e) => { const q = e.target.closest('[data-quitar]'); if (q) q.parentElement.remove(); });
+    const leerFilas = (caja) => $$(':scope > div', caja).map((f) => { const o = {}; $$('[data-k]', f).forEach((i) => { o[i.dataset.k] = i.type === 'number' ? Number(i.value) || 0 : i.value.trim(); }); return o; });
+    $('#f-cfg').addEventListener('submit', async (e) => {
+      e.preventDefault(); const d = datos(e.target), c = S.cfg;
+      const de = (pref, porc) => { const o = {}; Object.keys(d).filter((k) => k.startsWith(pref + '.')).forEach((k) => { const n = k.slice(pref.length + 1); o[n] = porc.includes(n) ? (d[k] || 0) / 100 : d[k]; }); return o; };
+      const niveles = leerFilas(ed.niveles).filter((n) => n.nombre && n.dias > 0).map((n) => ({ id: n.id || n.nombre.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), nombre: n.nombre, plan: n.plan, dias: n.dias, precio: n.precio }));
+      const feriados = lineas(d.feriados); const malas = feriados.filter((f) => !/^\d{4}-\d{2}-\d{2}$/.test(f));
+      if (malas.length) return toast('Feriado mal escrito: ' + malas[0] + '. Usa año-mes-día, por ejemplo 2027-01-01.', true);
+      const nuevo = {
+        precios: Object.assign({}, c.precios, de('p', ['feriado_pct', 'desc_14', 'desc_recurrente'])),
+        pago_cuidador: Object.assign({}, c.pago_cuidador, de('g', [])),
+        reglas: Object.assign({}, c.reglas, de('r', ['abono_pct']), { rondas_dia: Object.assign({}, (c.reglas || {}).rondas_dia, de('rd', [])) }),
+        membresias: { min_meses: d['m.min_meses'] || 2, niveles },
+        tareas: leerFilas(ed.tareas).filter((t) => t.t),
+        transferencia: de('t', []),
+        whatsapp: Object.assign({}, c.whatsapp, { numero: SH.telDigitos(d['w.numero']) }),
+        sitio: { url: (d['s.url'] || '').replace(/\/+$/, '') },
+        feriados, protocolo: lineas(d.protocolo),
+      };
+      await ocupado(e.target.querySelector('button[type=submit]'), async () => {
+        const ahora = new Date().toISOString();
+        const { error } = await db.from('safehome_config').upsert(Object.keys(nuevo).map((k) => ({ key: k, value: nuevo[k], updated_at: ahora })));
+        if (error) return toast(mensaje(error), true);
+        toast('Configuración guardada'); await refrescar();
+      });
+    });
+    const bp = $('#borrar-pruebas');
+    if (bp) bp.addEventListener('click', async () => {
+      if (!confirm('¿Borrar el cliente, el rondín, las reservas y las rondas de demostración? No se puede deshacer.')) return;
+      await ocupado(bp, async () => {
+        const rs = S.reservas.filter((r) => esPrueba(r) || esPrueba(porId(S.clientes, r.cliente_id) || {})).map((r) => r.id);
+        const ks = S.rondines.filter(esPrueba).map((k) => k.id), cs = S.clientes.filter(esPrueba).map((c) => c.id);
+        const vs = S.visitas.filter((v) => rs.includes(v.reserva_id) || ks.includes(v.cuidador_id)).map((v) => v.id);
+        const ms = S.membresias.filter((m) => cs.includes(m.cliente_id)).map((m) => m.id);
+        const pasos = [
+          () => vs.length && db.from('safehome_visitas').update({ pago_id: null }).in('id', vs),
+          () => ks.length && db.from('safehome_pagos').delete().in('cuidador_id', ks),
+          () => rs.length && db.from('safehome_pagos').delete().in('reserva_id', rs),
+          () => ms.length && db.from('safehome_pagos').delete().in('membresia_id', ms),
+          () => vs.length && db.from('safehome_visitas').delete().in('id', vs),
+          () => rs.length && db.from('safehome_reservas').delete().in('id', rs),
+          () => ks.length && db.from('safehome_cuidadores').delete().in('id', ks),
+          () => cs.length && db.from('safehome_clientes').delete().in('id', cs),
+          () => db.from('safehome_avisos').delete().in('ref_id', [].concat(vs, rs, ks, cs, ms)),
+        ];
+        for (const p of pasos) { const x = await p(); if (x && x.error) return toast(mensaje(x.error), true); }
+        toast('Datos de prueba borrados'); await refrescar();
+      });
+    });
+  }
+
+  iniciar();
+})();
+</script>
+</body>
+</html>

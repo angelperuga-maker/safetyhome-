@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda del rondín | SafetyHome</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#13233a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z' fill='%2346582f'/%3E%3Cpath d='M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/sh.css">
+<style>
+  main { padding: 22px 0 96px; }
+  h1 { font-size: 2.4rem; }
+  h2 { font-size: 1.9rem; }
+  .resumen { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0 22px; }
+  .resumen div { background: #fff; border: 1px solid var(--linea); border-radius: var(--radio); padding: 12px 14px; }
+  .resumen b { font-family: var(--titulo); font-size: 2rem; display: block; line-height: 1.1; }
+  .casa { border-left: 6px solid var(--olivo); }
+  .casa.futura { border-left-color: var(--linea); }
+  .casa h3 { margin-bottom: 2px; }
+  .casa .acciones { display: grid; gap: 10px; margin-top: 14px; }
+  .casa details { margin-top: 12px; border-top: 1px solid var(--linea); padding-top: 10px; }
+  .casa summary { font-weight: 600; cursor: pointer; }
+  .casa details h4 { margin: 14px 0 4px; font-size: 1rem; }
+  .casa details p { margin: 0 0 6px; white-space: pre-line; }
+  .lista-tareas { list-style: none; padding: 0; margin: 0; }
+  .lista-tareas label { display: flex; gap: 12px; align-items: flex-start; padding: 13px 4px; border-bottom: 1px solid var(--linea); cursor: pointer; font-size: 1.05rem; }
+  .lista-tareas input { width: 26px; height: 26px; flex: none; accent-color: var(--olivo); margin-top: 1px; }
+  .subir { display: block; border: 2px dashed var(--olivo); border-radius: var(--radio); padding: 18px; text-align: center; font-weight: 600; color: var(--olivo-osc); cursor: pointer; background: #fff; }
+  .subir input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .subir:focus-within { outline: 3px solid var(--bronce); outline-offset: 2px; }
+  .fotos .mini { display: grid; place-items: center; font-size: .85rem; color: var(--pizarra); text-align: center; }
+  .fotos .mini button { position: absolute; top: 4px; right: 4px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(19,35,58,.82); color: #fff; font-size: 1.1rem; line-height: 1; cursor: pointer; }
+  .barra { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid var(--linea); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); z-index: 20; }
+  .barra .angosto { width: min(680px, 100%); }
+  .reloj { font-family: var(--titulo); font-size: 1.3rem; font-weight: 600; }
+  .emerg { background: none; border: 0; color: #ffd9d4; font: 600 1rem var(--texto); text-decoration: underline; cursor: pointer; padding: 6px 0; }
+  ol.proto { padding-left: 1.3em; } ol.proto li { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<header class="cab">
+  <div class="angosto">
+    <span class="marca">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2l12 4v9c0 8-5.200 13-12 15C9.200 28 4 23 4 15V6z" fill="#7d9a55"/><path d="M9.500 16.500L16 10.500l6.500 6V22h-4.200v-4h-4.600v4H9.500z" fill="#fff"/></svg>
+      SafetyHome
+    </span>
+    <button class="emerg oculto" id="btn-emerg" type="button">Emergencia</button>
+  </div>
+</header>
+
+<main><div class="angosto" id="app"><p class="cargando">Cargando…</p></div></main>
+
+<dialog id="dlg-proto">
+  <div class="dlg-cab"><h3>Protocolo de emergencia</h3><button class="cerrar" type="button" data-cerrar aria-label="Cerrar">×</button></div>
+  <div class="dlg-cuerpo"><ol class="proto" id="proto-lista"></ol><a class="btn ancho" id="proto-wa" target="_blank" rel="noopener" href="#">Avisar a SafetyHome por WhatsApp</a></div>
+</dialog>
+
+<script src="vendor/supabase.js"></script>
+<script src="assets/sh.js"></script>
+<script>
+(function () {
+  const { $, $$, rpc, esc, clp, fecha, fechaLarga, hora, fechaHora, tel, wa, mapa, plural, PLAN, toast, subir, mensaje, ocupado } = SH;
+  const app = $('#app');
+  const LLAVE = 'sh-rondin';
+  const guardar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const leer = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+  const borrar = (k) => { try { localStorage.removeItem(k); } catch (e) {} };
+
+  let codigo = (new URLSearchParams(location.search).get('c') || leer(LLAVE) || '').toString().trim().toUpperCase();
+  let yo = null, agenda = null, ronda = null, tic = null;
+
+  $$('[data-cerrar]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+  $('#btn-emerg').addEventListener('click', () => $('#dlg-proto').showModal());
+
+  function pantallaIngreso(error) {
+    $('#btn-emerg').classList.add('oculto');
+    app.innerHTML = `<h1>Agenda del rondín</h1>
+      <p>Ingrese el código que recibió por WhatsApp al ser activado.</p>
+      <form id="ingreso" class="hoja">
+        <label class="campo"><span>Código de rondín</span><input type="text" name="c" maxlength="8" autocapitalize="characters" autocomplete="off" style="font-size:1.6rem;letter-spacing:.2em;text-transform:uppercase" required></label>
+        ${error ? `<div class="error" role="alert">${esc(error)}</div>` : ''}
+        <button class="btn ancho" type="submit" data-espera="Verificando…">Entrar</button>
+      </form>
+      <p class="mut" style="margin-top:18px">¿Aún no es rondín? <a href="rondines.html">Postule aquí</a>.</p>`;
+    $('#ingreso').addEventListener('submit', (e) => { e.preventDefault(); codigo = e.target.c.value.trim().toUpperCase(); entrar(e.target.querySelector('button')); });
+  }
+
+  async function entrar(boton) {
+    if (!codigo) return pantallaIngreso();
+    const tarea = async () => {
+      yo = await rpc('safehome_cuidador_login', { p_token: codigo });
+      if (!yo) { borrar(LLAVE); return pantallaIngreso('Ese código no es válido o ya no está activo.'); }
+      guardar(LLAVE, codigo);
+      if (location.search) history.replaceState(null, '', location.pathname);
+      await cargar();
+    };
+    try { boton ? await ocupado(boton, tarea) : await tarea(); } catch (e) { pantallaIngreso(mensaje(e)); }
+  }
+
+  async function cargar() {
+    agenda = await rpc('safehome_cuidador_agenda', { p_token: codigo });
+    if (!agenda) { borrar(LLAVE); return pantallaIngreso('Su código ya no está activo.'); }
+    $('#btn-emerg').classList.remove('oculto');
+    $('#proto-lista').innerHTML = (agenda.protocolo || []).map((p) => `<li>${esc(p)}</li>`).join('');
+    $('#proto-wa').href = wa(agenda.whatsapp, 'EMERGENCIA SafetyHome. Rondín ' + yo.nombre + ': ');
+    const abierta = agenda.reservas.find((r) => r.abierta);
+    if (abierta) return pantallaRonda(abierta, abierta.abierta);
+    pantallaAgenda();
+  }
+
+  function pantallaAgenda() {
+    clearInterval(tic); ronda = null;
+    const hoy = agenda.hoy;
+    const casas = agenda.reservas.map((r) => {
+      const activa = hoy >= r.fecha_inicio && hoy <= r.fecha_fin;
+      const faltan = Math.max(r.rondas_dia - r.rondas_hoy, 0);
+      const estado = activa
+        ? (faltan ? `Hoy: ${plural(faltan, 'ronda pendiente', 'rondas pendientes')}` : 'Rondas de hoy completas')
+        : (hoy < r.fecha_inicio ? `Comienza el ${fecha(r.fecha_inicio)}` : 'Terminó');
+      const extras = [r.piscina ? 'piscina' : '', r.extras && r.extras.paseo ? 'paseo de perros' : '', r.extras && r.extras.meds ? 'medicamentos' : ''].filter(Boolean);
+      return `<article class="hoja casa ${activa ? '' : 'futura'}" data-id="${esc(r.id)}">
+        <h3>${esc(r.direccion || 'Dirección por confirmar')}</h3>
+        <p class="mut" style="margin:0 0 8px">${esc(r.comuna || '')}, ${esc(fecha(r.fecha_inicio))} al ${esc(fecha(r.fecha_fin))}. Plan ${esc((PLAN[r.plan] || {}).n || r.plan)}</p>
+        <p style="margin:0"><strong>${esc(estado)}</strong></p>
+        <div class="acciones">
+          ${activa ? `<button class="btn" type="button" data-iniciar="${r.plan === 'full' ? 'noche' : 'visita'}">${r.plan === 'full' ? 'Registrar llegada' : 'Iniciar ronda'}</button>` : ''}
+          ${!r.presentacion_hecha && hoy <= r.fecha_inicio ? `<button class="btn sec" type="button" data-iniciar="presentacion">Registrar visita de presentación${r.presentacion_fecha ? ' (' + esc(fechaHora(r.presentacion_fecha)) + ')' : ''}</button>` : ''}
+          <a class="btn sec" href="${esc(mapa(r.direccion, r.comuna))}" target="_blank" rel="noopener">Cómo llegar</a>
+        </div>
+        <details>
+          <summary>Instrucciones y contactos</summary>
+          <h4>Cliente</h4><p>${esc(r.nombre)}, <a href="${esc(wa(r.telefono))}" target="_blank" rel="noopener">${esc(tel(r.telefono))}</a></p>
+          <h4>Mascotas</h4><p>${r.mascotas ? esc(plural(r.mascotas, 'mascota', 'mascotas')) + (r.detalle_mascotas ? '. ' + esc(r.detalle_mascotas) : '') : 'Sin mascotas'}</p>
+          ${extras.length ? `<h4>Incluye</h4><p>${esc(extras.join(', '))}</p>` : ''}
+          ${r.instrucciones ? `<h4>Instrucciones</h4><p>${esc(r.instrucciones)}</p>` : ''}
+          ${r.contacto_emergencia ? `<h4>Contacto de emergencia</h4><p>${esc(r.contacto_emergencia)}</p>` : ''}
+          ${r.veterinario ? `<h4>Veterinario</h4><p>${esc(r.veterinario)}</p>` : ''}
+          <h4>Tareas de cada ronda</h4><ul>${r.tareas.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+        </details>
+      </article>`;
+    }).join('');
+    app.innerHTML = `<h1>Buen turno, ${esc(yo.nombre.split(' ')[0])}</h1>
+      <div class="resumen">
+        <div><b class="num">${agenda.rondas_mes}</b>rondas este mes</div>
+        <div><b class="num">${clp(agenda.pendiente_pago)}</b>por cobrar</div>
+      </div>
+      <h2>Casas asignadas</h2>
+      ${casas || '<div class="hoja"><p style="margin:0">No tiene casas asignadas por ahora. Le avisaremos por WhatsApp cuando haya una.</p></div>'}
+      <p style="margin-top:26px"><button class="enlace" type="button" id="actualizar">Actualizar agenda</button> &nbsp; <button class="enlace" type="button" id="salir">Salir</button></p>`;
+    $('#actualizar').addEventListener('click', () => cargar().then(() => toast('Agenda actualizada')).catch((e) => toast(mensaje(e), true)));
+    $('#salir').addEventListener('click', () => { borrar(LLAVE); codigo = ''; pantallaIngreso(); });
+    $$('[data-iniciar]').forEach((b) => b.addEventListener('click', () => iniciar(b)));
+  }
+
+  function ubicacion() {
+    return new Promise((ok) => {
+      if (!navigator.geolocation) return ok(null);
+      navigator.geolocation.getCurrentPosition((p) => ok(p.coords), () => ok(null), { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 });
+    });
+  }
+
+  async function iniciar(boton) {
+    const r = agenda.reservas.find((x) => x.id === boton.closest('[data-id]').dataset.id);
+    const tipo = boton.dataset.iniciar;
+    boton.dataset.espera = 'Registrando llegada…';
+    try {
+      await ocupado(boton, async () => {
+        const pos = await ubicacion();
+        const id = await rpc('safehome_checkin', { p_token: codigo, p_reserva: r.id, p_tipo: tipo, p_lat: pos ? pos.latitude : null, p_lng: pos ? pos.longitude : null });
+        pantallaRonda(r, { id, tipo, hora_llegada: new Date().toISOString() });
+      });
+    } catch (e) { toast(mensaje(e), true); }
+  }
+
+  function pantallaRonda(r, v) {
+    const esPres = v.tipo === 'presentacion';
+    const llave = 'sh-ronda-' + v.id;
+    const tareas = esPres
+      ? ['Recorrí la casa con el cliente', 'Recibí las llaves', 'Revisé las instrucciones y la hoja de tareas'].concat(r.mascotas ? ['Conocí a las mascotas'] : [])
+      : r.tareas;
+    ronda = Object.assign({ hechas: [], fotos: [], obs: '', novedad: false }, leer(llave) || {});
+    const min = esPres ? 0 : agenda.fotos_min;
+    const persistir = () => guardar(llave, { hechas: ronda.hechas, fotos: ronda.fotos, obs: ronda.obs, novedad: ronda.novedad });
+    const previas = {};
+
+    app.innerHTML = `<p class="mut" style="margin:0">${esPres ? 'Visita de presentación' : (v.tipo === 'noche' ? 'Pernocte' : 'Ronda')} en curso</p>
+      <h1 style="font-size:2rem">${esc(r.direccion || r.comuna || 'Casa')}</h1>
+      <p>Llegada registrada a las <strong class="num">${esc(hora(v.hora_llegada))}</strong>. <span class="reloj num" id="reloj"></span></p>
+      <section class="hoja"><h3>Tareas</h3><ul class="lista-tareas">${tareas.map((t, i) => `<li><label><input type="checkbox" data-t="${i}" ${ronda.hechas.includes(t) ? 'checked' : ''}><span>${esc(t)}</span></label></li>`).join('')}</ul></section>
+      <section class="hoja"><h3>Fotos${min ? ` <span class="mut" style="font:500 1rem var(--texto)" id="cuenta"></span>` : ''}</h3>
+        <label class="subir"><input type="file" accept="image/*" capture="environment" multiple id="archivo">Tomar o elegir foto</label>
+        ${min ? '<p class="chico mut" style="margin:8px 0 0">Fachada, interior, mascotas y jardín o piscina.</p>' : ''}
+        <div class="fotos" id="fotos"></div></section>
+      <section class="hoja">
+        <label class="marcar"><input type="checkbox" id="novedad" ${ronda.novedad ? 'checked' : ''}><span><strong>Hubo una novedad</strong><br><span class="mut">Algo roto, extraño o fuera de lo normal. Se avisa de inmediato a SafetyHome.</span></span></label>
+        <label class="campo" style="margin:10px 0 0"><span>Observaciones</span><textarea id="obs" placeholder="${esPres ? 'Acuerdos con el cliente, ubicación de llaves de paso, detalles de la casa' : 'Cómo encontró la casa y a las mascotas'}">${esc(ronda.obs)}</textarea></label>
+      </section>
+      <div id="err" class="error oculto" role="alert"></div>
+      <div class="barra"><div class="angosto"><button class="btn ancho" type="button" id="terminar" data-espera="Enviando el parte…">${esPres ? 'Terminar visita' : 'Terminar ronda y enviar parte'}</button></div></div>`;
+
+    const pintar = () => {
+      $('#fotos').innerHTML = ronda.fotos.map((p, i) => `<div class="mini">${previas[p] ? `<img src="${previas[p]}" alt="Foto ${i + 1}">` : `Foto ${i + 1}<br>subida`}<button type="button" data-quitar="${i}" aria-label="Quitar foto ${i + 1}">×</button></div>`).join('');
+      const c = $('#cuenta'); if (c) c.textContent = `${ronda.fotos.length} de ${min} mínimo`;
+      $$('[data-quitar]').forEach((b) => b.addEventListener('click', () => { ronda.fotos.splice(Number(b.dataset.quitar), 1); persistir(); pintar(); }));
+    };
+    pintar();
+    const inicio = new Date(v.hora_llegada).getTime();
+    const reloj = () => { const m = Math.max(0, Math.floor((Date.now() - inicio) / 60000)); const el = $('#reloj'); if (el) el.textContent = m ? `Lleva ${m} min.` : ''; };
+    reloj(); clearInterval(tic); tic = setInterval(reloj, 30000);
+
+    $$('[data-t]').forEach((c) => c.addEventListener('change', () => { ronda.hechas = $$('[data-t]').filter((x) => x.checked).map((x) => tareas[Number(x.dataset.t)]); persistir(); }));
+    $('#obs').addEventListener('input', (e) => { ronda.obs = e.target.value; persistir(); });
+    $('#novedad').addEventListener('change', (e) => { ronda.novedad = e.target.checked; persistir(); });
+    $('#archivo').addEventListener('change', async (e) => {
+      const archivos = Array.from(e.target.files || []); e.target.value = '';
+      for (const f of archivos) {
+        toast('Subiendo foto…');
+        try {
+          const ruta = await subir(`fotos/${v.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`, f);
+          previas[ruta] = URL.createObjectURL(f); ronda.fotos.push(ruta); persistir(); pintar(); toast('Foto subida');
+        } catch (ex) { toast('No se pudo subir la foto. ' + mensaje(ex), true); }
+      }
+    });
+    $('#terminar').addEventListener('click', async (e) => {
+      const err = $('#err'); err.classList.add('oculto');
+      const falla = (t) => { err.textContent = t; err.classList.remove('oculto'); err.scrollIntoView({ block: 'center' }); };
+      if (ronda.fotos.length < min) return falla(`Faltan fotos: son al menos ${min} por ronda y lleva ${ronda.fotos.length}.`);
+      if (ronda.novedad && ronda.obs.trim().length < 10) return falla('Describa la novedad en las observaciones.');
+      const pendientes = tareas.filter((t) => !ronda.hechas.includes(t));
+      if (pendientes.length && !ronda.obs.trim()) return falla(`Quedan ${plural(pendientes.length, 'tarea sin marcar', 'tareas sin marcar')}. Márquelas o explique el motivo en las observaciones.`);
+      try {
+        await ocupado(e.currentTarget, () => rpc('safehome_checkout', {
+          p_token: codigo, p_visita: v.id, p_checklist: tareas.map((t) => ({ t, ok: ronda.hechas.includes(t) })),
+          p_fotos: ronda.fotos, p_observaciones: ronda.obs.trim() || null, p_incidencia: ronda.novedad,
+        }));
+        borrar(llave); clearInterval(tic);
+        app.innerHTML = `<div class="exito"><h2>${esPres ? 'Visita registrada' : 'Parte enviado'}</h2><p>${esPres ? 'La visita de presentación quedó registrada.' : 'El cliente recibirá el parte por WhatsApp.'}</p><button class="btn" type="button" id="volver">Volver a la agenda</button></div>`;
+        $('#volver').addEventListener('click', () => cargar().catch((x) => toast(mensaje(x), true)));
+        window.scrollTo(0, 0);
+      } catch (ex) { falla(mensaje(ex)); }
+    });
+    window.scrollTo(0, 0);
+  }
+
+  entrar();
+})();
+</script>
+</body>
+</html>
