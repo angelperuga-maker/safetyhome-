@@ -124,7 +124,7 @@
         <p class="mut" style="margin:0 0 8px">${esc(r.comuna || '')}, ${esc(fecha(r.fecha_inicio))} al ${esc(fecha(r.fecha_fin))}. Plan ${esc((PLAN[r.plan] || {}).n || r.plan)}</p>
         <p style="margin:0"><strong>${esc(estado)}</strong></p>
         <div class="acciones">
-          ${activa ? `<button class="btn" type="button" data-iniciar="${r.plan === 'full' ? 'noche' : 'visita'}">${r.plan === 'full' ? 'Registrar llegada' : 'Iniciar ronda'}</button>` : ''}
+          ${activa ? `<button class="btn ${faltan ? '' : 'sec'}" type="button" data-iniciar="${r.plan === 'full' ? 'noche' : 'visita'}">${!faltan ? 'Registrar otra ronda' : r.plan === 'full' ? 'Registrar llegada' : 'Iniciar ronda'}</button>` : ''}
           ${!r.presentacion_hecha && hoy <= r.fecha_inicio ? `<button class="btn sec" type="button" data-iniciar="presentacion">Registrar visita de presentación${r.presentacion_fecha ? ' (' + esc(fechaHora(r.presentacion_fecha)) + ')' : ''}</button>` : ''}
           <a class="btn sec" href="${esc(mapa(r.direccion, r.comuna))}" target="_blank" rel="noopener">Cómo llegar</a>
         </div>
